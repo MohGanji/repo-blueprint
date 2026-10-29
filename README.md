@@ -1,12 +1,12 @@
 # repo-blueprint
 
 [![npm](https://img.shields.io/npm/v/repo-blueprint)](https://www.npmjs.com/package/repo-blueprint)
-[![license](https://img.shields.io/npm/l/repo-blueprint)](LICENSE)
-[![node](https://img.shields.io/node/v/repo-blueprint)](package.json)
+[![license](https://img.shields.io/npm/l/repo-blueprint)](https://github.com/MohGanji/repo-blueprint/blob/main/LICENSE)
+[![node](https://img.shields.io/node/v/repo-blueprint)](https://github.com/MohGanji/repo-blueprint/blob/main/package.json)
 
 **See how a codebase fits together in one command.** repo-blueprint reads your TypeScript and Python source and turns it into a zoomable architecture map, with every package, folder and file stacked by what depends on what.
 
-![repo-blueprint exploring the TanStack Query monorepo](media/demo.gif)
+![repo-blueprint exploring the TanStack Query monorepo](https://raw.githubusercontent.com/MohGanji/repo-blueprint/v0.1.1/media/demo.gif)
 
 <sub>The 28 packages of the [TanStack Query](https://github.com/TanStack/query) monorepo.</sub>
 
@@ -23,6 +23,19 @@ npx repo-blueprint build --open
 - **Deterministic.** Pure static analysis through the TypeScript compiler and Python's own parser. No AI guessing: the same commit and the same version always produce the same page.
 - **One file.** The output is a single standalone HTML page you can open, share or commit.
 - **Live mode.** `watch` keeps the map open in your browser and redraws it as you code.
+
+<table>
+  <tr>
+    <td width="33%"><img src="https://raw.githubusercontent.com/MohGanji/repo-blueprint/v0.1.1/media/overview.png" alt="Whole-repo overview with query-core highlighted"></td>
+    <td width="33%"><img src="https://raw.githubusercontent.com/MohGanji/repo-blueprint/v0.1.1/media/file-detail.png" alt="A file's imports, users and exports"></td>
+    <td width="33%"><img src="https://raw.githubusercontent.com/MohGanji/repo-blueprint/v0.1.1/media/import-cycle.png" alt="An import cycle flagged in query-core"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>The whole repo in dependency tiers. Hover a package to light up what uses it.</sub></td>
+    <td align="center"><sub>Any file: what it imports, what uses it, what it exports.</sub></td>
+    <td align="center"><sub>Findings, like this 14-file import cycle, marked on the map.</sub></td>
+  </tr>
+</table>
 
 ## Quick start
 
@@ -45,7 +58,7 @@ repo-blueprint ships as an agent skill, so Claude Code and other agents can draw
 npx skills add MohGanji/repo-blueprint
 ```
 
-Or copy [`skills/repo-blueprint/SKILL.md`](skills/repo-blueprint/SKILL.md) into your agent's skills folder. Then ask for "a blueprint of this repo", or "a live blueprint I can keep open while I work". The skill runs this package through `npx`, pinned to an exact version.
+Or copy [`skills/repo-blueprint/SKILL.md`](https://github.com/MohGanji/repo-blueprint/blob/main/skills/repo-blueprint/SKILL.md) into your agent's skills folder. Then ask for "a blueprint of this repo", or "a live blueprint I can keep open while I work". The skill runs this package through `npx`, pinned to an exact version.
 
 ## What it understands
 
@@ -55,7 +68,7 @@ Or copy [`skills/repo-blueprint/SKILL.md`](skills/repo-blueprint/SKILL.md) into 
 
 ## Per-repo settings
 
-A `.blueprint.json` at the root of the analysed repo extends the [defaults](src/blueprint.config.json):
+A `.blueprint.json` at the root of the analysed repo extends the [defaults](https://github.com/MohGanji/repo-blueprint/blob/main/src/blueprint.config.json):
 
 - `externalSystems`: system names and the packages that indicate them, for example `{ "Stripe": ["stripe"] }`.
 - `messaging`: method and property names for RPC calls, publishes and subscriptions.
@@ -65,22 +78,30 @@ A `.blueprint.json` at the root of the analysed repo extends the [defaults](src/
 ## How it works
 
 ```
-bin/repo-blueprint.mjs        CLI: build and watch
-src/extract-ts.mjs            TypeScript facts via the compiler API
-src/extract-py.py             Python facts via the ast module
-src/model.mjs                 packages, folder tree, edges, roles, findings
-src/views.mjs                 one Pele diagram per folder
-src/build.mjs                 writes the standalone HTML
-src/template.html             the page
-src/blueprint.config.json     default settings
-skills/repo-blueprint/        the agent skill
-.claude-plugin/plugin.json    Claude Code plugin manifest
+repo-blueprint
+├── bin
+│   └── repo-blueprint.mjs      CLI: build and watch
+├── src
+│   ├── extract-ts.mjs          TypeScript facts via the compiler API
+│   ├── extract-py.py           Python facts via the ast module
+│   ├── model.mjs               packages, folder tree, edges, roles, findings
+│   ├── views.mjs               one Pele diagram per folder
+│   ├── build.mjs               writes the standalone HTML
+│   ├── template.html           the page
+│   └── blueprint.config.json   default settings
+├── skills
+│   └── repo-blueprint
+│       └── SKILL.md            the agent skill
+└── .claude-plugin
+    └── plugin.json             Claude Code plugin manifest
 ```
+
+The extractors read the source into facts, the model turns facts into packages, edges and findings, and the build renders one diagram per folder into a single HTML page.
 
 ## Contributing
 
-Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Issues and pull requests are welcome. See [CONTRIBUTING.md](https://github.com/MohGanji/repo-blueprint/blob/main/CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/MohGanji/repo-blueprint/blob/main/LICENSE)
