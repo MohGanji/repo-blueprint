@@ -15,7 +15,7 @@ A clearer way to see how a repository is built. repo-blueprint maps a codebase i
 
 **[Explore the blueprint gallery →](https://mohganji.github.io/repo-blueprint/)**
 
-Example blueprints of open-source GitHub repos, such as [Pydantic](https://mohganji.github.io/repo-blueprint/pydantic.blueprint.html), [Zod](https://mohganji.github.io/repo-blueprint/zod.blueprint.html), [Flask](https://mohganji.github.io/repo-blueprint/flask.blueprint.html) and [Express](https://mohganji.github.io/repo-blueprint/express.blueprint.html).
+Example blueprints of open-source GitHub repos, such as Karpathy's [nanochat](https://mohganji.github.io/repo-blueprint/nanochat.blueprint.html), [Pydantic](https://mohganji.github.io/repo-blueprint/pydantic.blueprint.html), [Zod](https://mohganji.github.io/repo-blueprint/zod.blueprint.html) and [Express](https://mohganji.github.io/repo-blueprint/express.blueprint.html).
 
 ## Usage
 
