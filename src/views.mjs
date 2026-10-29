@@ -206,8 +206,9 @@ function makeView(v) {
   const outerNodes = (side) =>
     [...outer.entries()]
       .filter(([, o]) => o.side === side)
-      .map(([k]) => (k.startsWith('more:') ? { key: k, label: `+${more[side].length} more`, cls: ['outer', 'more'], outerSide: side } : { ...outerOf(k), outerSide: side }))
-      .sort((a, b) => (a.key.startsWith('more:') ? 1 : 0) - (b.key.startsWith('more:') ? 1 : 0) || a.label.localeCompare(b.label));
+      .map(([k, o]) => (k.startsWith('more:') ? { key: k, label: `+${more[side].length} more`, cls: ['outer', 'more'], outerSide: side, weight: 0 } : { ...outerOf(k), outerSide: side, weight: o.weight }))
+      // External dependencies read most-used first; neighbouring packages stay alphabetical.
+      .sort((a, b) => (a.key.startsWith('more:') ? 1 : 0) - (b.key.startsWith('more:') ? 1 : 0) || (side === 'ext' ? b.weight - a.weight : 0) || a.label.localeCompare(b.label));
   const ups = v.frame ? outerNodes('up') : [];
   const downs = v.frame ? outerNodes('down') : [];
   const exts = outerNodes('ext');
@@ -246,7 +247,7 @@ function makeView(v) {
     lines.push('  end');
   }
   if (exts.length) {
-    lines.push('  subgraph EXT["External systems"]');
+    lines.push('  subgraph EXT["External dependencies"]');
     chunk(exts, '    ');
     lines.push('  end');
   }

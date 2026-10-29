@@ -25,10 +25,20 @@
     "server.ts",
     "worker.ts",
     "app.module.ts",
+    "main.js",
+    "index.js",
+    "server.js",
+    "worker.js",
     "main.py",
     "__main__.py",
     "__init__.py",
-    "*.config.ts"
+    "*.config.ts",
+    "*.config.js",
+    "*.config.mjs",
+    "*.config.cjs",
+    ".*rc.js",
+    ".*rc.cjs",
+    ".*rc.mjs"
   ],
   "frameworkLoaded": [
     "*.entity.ts",
@@ -70,15 +80,23 @@
   },
   "externalSystems": {
     "PostgreSQL": [
-      "typeorm",
-      "@nestjs/typeorm",
       "pg",
-      "sqlalchemy",
-      "knex",
       "postgres",
-      "@prisma/client",
-      "drizzle-orm",
-      "pg-boss"
+      "pg-boss",
+      "psycopg",
+      "psycopg2",
+      "asyncpg"
+    ],
+    "Stripe": [
+      "stripe",
+      "@stripe/stripe-js",
+      "@stripe/react-stripe-js"
+    ],
+    "SQLite": [
+      "better-sqlite3",
+      "sqlite3",
+      "sqlite",
+      "aiosqlite"
     ],
     "MySQL": [
       "mysql",

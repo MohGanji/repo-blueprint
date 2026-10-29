@@ -1,0 +1,15 @@
+[
+  { "name": "express", "repo": "https://github.com/expressjs/express", "commit": "1c6f1b0fe4000977b9a7b4f34097e4d527dd9824" },
+  { "name": "koa", "repo": "https://github.com/koajs/koa", "commit": "b786e7b456782c2cff1d6549cd4c8dba3feeb262" },
+  { "name": "debug", "repo": "https://github.com/debug-js/debug", "commit": "666dbc50680933bde9e7fde3a6c3241102e8f60b" },
+  { "name": "chalk", "repo": "https://github.com/chalk/chalk", "commit": "72110019e147683f60e13fa0ff5c14a0c27cd9fe" },
+  { "name": "nanoid", "repo": "https://github.com/ai/nanoid", "commit": "35ea7d02c9f01d7f3d2293cc97829ff16d1e8117" },
+  { "name": "ky", "repo": "https://github.com/sindresorhus/ky", "commit": "3541888878c4d303a8bc2ad61815f4e048f55a5d" },
+  { "name": "zustand", "repo": "https://github.com/pmndrs/zustand", "commit": "382d29c485e67018c06e75ec7235130d0968522c" },
+  { "name": "zod", "repo": "https://github.com/colinhacks/zod", "commit": "b1f6ba06c5de0e600640917615e5df70fa73f060" },
+  { "name": "requests", "repo": "https://github.com/psf/requests", "commit": "3c7baaa05ab4aa49cc819ce3a819d260de19c157" },
+  { "name": "click", "repo": "https://github.com/pallets/click", "commit": "2247b35ea1c47c727d7a06e51fa280e12a863ff6" },
+  { "name": "httpx", "repo": "https://github.com/encode/httpx", "commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254" },
+  { "name": "flask", "repo": "https://github.com/pallets/flask", "commit": "d086db856be187255b8ec61ef409357393020f32" },
+  { "name": "rich", "repo": "https://github.com/Textualize/rich", "commit": "9d8f9a372cc5916fd4781fec207ced7ddac2f08f" }
+]

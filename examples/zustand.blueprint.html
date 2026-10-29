@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>zustand blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one Pele diagram per zoom level in a pan/zoom stage, inspector rail on the right; stacks below 1050px. */
+:root {
+  --bg: #e9efee;
+  --paper: #f6f9f8;
+  --surface: #fdfefe;
+  --band: #e1e9e8;
+  --ink: #14233a;
+  --muted: #576878;
+  --line: #c3cfd2;
+  --edge: #6f7f8c;
+  --out: #ad2a78;
+  --in: #1d6bb0;
+  --amber: #8a5f00;
+  --green: #2b7a4b;
+  --red: #b23a2a;
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --diagram: "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d141a; --paper: #111a21; --surface: #18232d; --band: #142029; --ink: #e2e9ee; --muted: #8fa0ad; --line: #2b3b47; --edge: #7d8f9c;
+    --out: #e466ae; --in: #66adec; --amber: #e2b34e; --green: #6cc48f; --red: #ef7a68; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d141a; --paper: #111a21; --surface: #18232d; --band: #142029; --ink: #e2e9ee; --muted: #8fa0ad; --line: #2b3b47; --edge: #7d8f9c;
+  --out: #e466ae; --in: #66adec; --amber: #e2b34e; --green: #6cc48f; --red: #ef7a68; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+html { padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45; }
+button { font: inherit; color: inherit; }
+code, .mono { font-family: var(--mono); font-size: 12.5px; }
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 16px; gap: 12px; }
+
+header { display: grid; gap: 10px; min-width: 0; position: relative; }
+.title-row { padding-right: 40px; }
+.title-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; min-width: 0; }
+.helpbtn { position: absolute; top: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 14px; display: grid; place-items: center; padding: 0; align-self: center; }
+.helpbtn:hover { border-color: var(--ink); }
+.helpbtn:focus-visible, .helpclose:focus-visible { outline: 2px solid var(--in); outline-offset: 2px; }
+dialog#help { width: calc(100vw - 32px); height: calc(100vh - 32px); max-width: 1100px; max-height: none; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+dialog#help::backdrop { background: rgb(0 0 0 / 0.5); }
+.help-inner { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.help-head h2 { font-family: var(--display); font-size: 24px; margin: 0; }
+.helpclose { border: 1px solid var(--line); background: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+.help-body { overflow: auto; padding: 18px 20px 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 22px 36px; align-content: start; }
+.help-body section { display: grid; gap: 8px; align-content: start; max-width: 70ch; }
+.help-body h3 { font-family: var(--display); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 0; }
+.help-body p { margin: 0; line-height: 1.55; }
+.help-body dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; }
+.help-body dt { font-weight: 600; }
+.help-body dd { margin: 0; color: var(--muted); }
+.help-body .sevdot { display: inline-block; vertical-align: 1px; }
+@media (max-width: 520px) { .help-body dl { grid-template-columns: 1fr; gap: 2px; } .help-body dd { margin-bottom: 6px; } }
+h1 { font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.1; margin: 0; letter-spacing: 0.01em; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; font-family: var(--display); font-size: 19px; font-weight: 600; min-width: 0; flex: 1 1 260px; }
+.crumbs button { background: none; border: 0; padding: 2px 5px; border-radius: 4px; cursor: pointer; color: var(--in); overflow-wrap: anywhere; text-align: left; }
+.crumbs button:focus-visible { outline: 2px solid var(--in); }
+.crumbs button[aria-current="true"] { color: var(--ink); cursor: default; }
+.crumbs .sep { color: var(--muted); font-weight: 500; }
+.search { position: relative; flex: 1 1 240px; max-width: 420px; margin-left: auto; min-width: 0; }
+.search input { width: 100%; padding: 7px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; }
+.search input:focus-visible { outline: 2px solid var(--in); outline-offset: 1px; }
+.hits { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; max-height: 60vh; overflow: auto; box-shadow: 0 10px 28px rgb(0 0 0 / 0.2); }
+.hits button { display: grid; width: 100%; text-align: left; padding: 7px 12px; border: 0; border-bottom: 1px solid var(--line); background: none; cursor: pointer; }
+.hits button:hover, .hits button:focus-visible { background: var(--band); outline: none; }
+.hits .hk { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.hits .hp { font-family: var(--mono); font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.legend svg { vertical-align: middle; }
+.legend .tog { display: inline-flex; gap: 4px; align-items: center; background: none; border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px 1px 6px; cursor: pointer; color: var(--ink); font-size: 12.5px; transition: opacity .15s; }
+.legend .tog[aria-pressed="false"] { opacity: 0.45; border-style: dashed; }
+.legend .tog:hover { border-color: var(--ink); }
+.legend .tog:focus-visible { outline: 2px solid var(--in); outline-offset: 1px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 2px solid; margin-right: 5px; vertical-align: -1px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 410px; gap: 14px; min-height: 0; }
+@media (max-width: 1050px) { .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(380px, 58vh) auto; } .app { height: auto; } }
+
+.stage { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); touch-action: none; cursor: grab; min-height: 0; }
+.stage.panning { cursor: grabbing; }
+.layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform, opacity; }
+.layer svg { display: block; overflow: visible; }
+.portal { position: absolute; inset: 0; overflow: hidden; background: var(--paper); will-change: clip-path, opacity; }
+.portal-edge { position: absolute; border: 2px solid var(--ink); border-radius: 8px; pointer-events: none; box-shadow: 0 18px 50px rgb(0 0 0 / 0.25); }
+.caption { position: absolute; left: 10px; bottom: 10px; font-size: 12px; color: var(--muted); background: color-mix(in srgb, var(--paper) 88%, transparent); padding: 3px 8px; border-radius: 4px; pointer-events: none; max-width: calc(100% - 140px); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.caption:empty { display: none; }
+.zoomctl { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
+.zoomctl button { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; cursor: pointer; padding: 0; color: var(--ink); }
+.zoomctl button:hover { border-color: var(--ink); }
+.zoomctl svg { width: 16px; height: 16px; }
+.zoomctl button:focus-visible { outline: 2px solid var(--in); }
+
+.pele { --pele-bg: var(--paper); --pele-fg: var(--ink); --pele-muted: var(--muted); --pele-line: var(--edge); --pele-surface: var(--surface); --pele-surface-alt: var(--band); --pele-border: var(--line); --pele-accent: var(--in); --pele-font: var(--diagram); --pele-radius: 5px; }
+.pele .pele-node { cursor: pointer; transition: opacity .15s; }
+.pele .pele-node > rect:not(.stack) { stroke: var(--line); }
+.pele .pele-node.lib > rect:not(.stack) { stroke: var(--green); stroke-width: 1.6px !important; }
+.pele .pele-node.service > rect:not(.stack) { stroke: var(--in); stroke-width: 1.6px !important; }
+.pele .pele-node.app > rect:not(.stack) { stroke: var(--out); stroke-width: 1.6px !important; }
+.pele .pele-node.comp > rect:not(.stack), .pele .pele-node.child > rect:not(.stack) { stroke: var(--edge); }
+.pele .pele-node.outer > rect:not(.stack) { stroke-dasharray: 4 3; fill: var(--paper); }
+.pele .pele-node.ext > rect:not(.stack) { stroke: var(--muted); stroke-dasharray: none; fill: var(--band); }
+.pele .pele-node.ext text { font-style: italic; }
+.pele .pele-node.more > rect:not(.stack) { stroke-dasharray: 2 3; fill: var(--paper); }
+.pele .pele-node.more text { fill: var(--muted); font-style: italic; }
+.pele .pele-node .stack { fill: var(--surface); stroke: var(--edge); stroke-width: 1px; }
+.pele .pele-node .drill-badge { cursor: zoom-in; }
+.pele .pele-node .drill-badge circle { fill: var(--ink); }
+.pele .pele-node .drill-badge circle.hit { fill: transparent; }
+.pele .pele-node .drill-badge path { stroke: var(--paper); stroke-width: 1.5; stroke-linecap: round; fill: none; pointer-events: none; }
+.pele .pele-node .drill-badge:hover circle:not(.hit) { fill: var(--in); }
+.pele .pele-node:focus { outline: none; }
+.pele .pele-node:focus-visible > rect:not(.stack) { stroke: var(--in) !important; stroke-width: 2.5px !important; }
+.pele .pele-node .go-badge { stroke: var(--muted); stroke-width: 1.3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pele .pele-node.sel > rect:not(.stack) { stroke: var(--ink) !important; stroke-width: 2.5px !important; }
+.pele .pele-node.hit > rect:not(.stack) { stroke: var(--amber) !important; stroke-width: 3px !important; }
+.pele .pele-node.nb-out > rect:not(.stack) { stroke: var(--out) !important; stroke-width: 2.4px !important; }
+.pele .pele-node.nb-in > rect:not(.stack) { stroke: var(--in) !important; stroke-width: 2.4px !important; }
+.pele.focus .pele-node.dim { opacity: 0.28; }
+.pele .pele-edge { transition: opacity .15s; }
+.pele .pele-edge.k-rpc path:not(.edge-hit) { stroke: var(--out); }
+.pele .pele-edge.k-rpc .pele-marker { fill: var(--out); }
+.pele .pele-edge.k-http path:not(.edge-hit) { stroke: var(--in); }
+.pele .pele-edge.k-http .pele-marker { fill: var(--in); }
+.pele .pele-edge.k-event path:not(.edge-hit) { stroke: var(--amber); }
+.pele .pele-edge.k-event .pele-marker { fill: var(--amber); }
+.pele.focus .pele-edge { opacity: 0.12; }
+.off-import .pele .pele-edge.k-import, .off-rpc .pele .pele-edge.k-rpc, .off-http .pele .pele-edge.k-http, .off-event .pele .pele-edge.k-event, .off-ext .pele .pele-edge.k-ext { opacity: 0; }
+.pele .pele-edge.k-ext path:not(.edge-hit) { stroke: var(--muted); stroke-dasharray: 2 3; }
+.pele .pele-edge.k-ext .pele-marker { fill: var(--muted); }
+.pele.focus .pele-edge.on { opacity: 1 !important; }
+.pele.focus .pele-edge.on path:not(.edge-hit) { stroke-width: 2.4px; }
+.pele .pele-edge .edge-hit { stroke: transparent !important; stroke-width: 12px; fill: none; pointer-events: stroke; cursor: pointer; }
+.pele .pele-edge:hover path:not(.edge-hit) { stroke-width: 2.6px; }
+.pele.edge-focus .pele-edge { opacity: 0.12; }
+.pele .pele-edge.picked { opacity: 1 !important; }
+.pele .pele-edge.picked path:not(.edge-hit) { stroke-width: 3px; }
+.pele .pele-node.file > rect:not(.stack) { fill: var(--paper); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; padding: 16px; text-align: center; }
+.pele .pele-cluster rect { fill: var(--band); fill-opacity: 0.55; stroke: var(--line); }
+.pele .pele-cluster[data-id="FRAME"] rect { fill: var(--surface); fill-opacity: 0.6; stroke: var(--ink); stroke-width: 2px; }
+.pele .pele-cluster[data-id="EXT"] rect { fill: var(--band); fill-opacity: 0.9; stroke: var(--muted); stroke-dasharray: 2 3; }
+.pele .pele-cluster[data-id="UP"] rect, .pele .pele-cluster[data-id="DOWN"] rect { fill: none; stroke: var(--edge); stroke-dasharray: 6 4; }
+.pele .pele-cluster[data-id^="C"] rect { fill: color-mix(in srgb, var(--red) 8%, transparent); fill-opacity: 1; stroke: var(--red); stroke-dasharray: 5 3; }
+.pele .pele-cluster-label, .pele .pele-cluster-title text { font-weight: 600; }
+.pele [data-id="FRAME"] .pele-cluster-label, .pele .pele-cluster-title[data-id="FRAME"] .pele-cluster-label { fill: var(--ink); }
+.pele .pele-cluster-title[data-id^="C"] .pele-cluster-label { fill: var(--red); }
+
+aside { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; overflow: auto; display: grid; gap: 14px; align-content: start; min-width: 0; min-height: 0; }
+aside h2 { font-family: var(--display); font-size: 26px; font-weight: 700; margin: 0; line-height: 1.05; overflow-wrap: anywhere; padding-right: 36px; }
+aside h3 { font-family: var(--display); font-size: 13.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 0 0 6px; }
+aside p { margin: 0; }
+aside ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+aside li { min-width: 0; overflow-wrap: anywhere; }
+aside .mono { overflow-wrap: anywhere; }
+.more-list > summary { font-size: 12.5px; margin-top: 6px; }
+.more-list[open] > summary { margin-bottom: 5px; }
+.path { color: var(--muted); overflow-wrap: anywhere; }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-weight: 600; }
+.link { background: none; border: 0; padding: 0; color: var(--in); cursor: pointer; text-align: left; font-weight: 500; overflow-wrap: anywhere; }
+.link:hover { text-decoration: underline; }
+.det { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-family: var(--mono); font-size: 11.5px; padding: 1px 6px; border-radius: 3px; background: var(--band); overflow-wrap: anywhere; }
+.open { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.open svg { width: 26px; height: 26px; }
+.open.zoom circle { fill: var(--ink); }
+.open.zoom path { stroke: var(--surface); stroke-width: 1.8; stroke-linecap: round; fill: none; }
+.open.zoom:hover circle { fill: var(--in); }
+.open.go { border: 1px solid var(--line); border-radius: 50%; }
+.open.go:hover { border-color: var(--ink); }
+.open .go { stroke: var(--ink); stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.open:focus-visible { outline: 2px solid var(--in); outline-offset: 2px; border-radius: 50%; }
+.kind { display: inline-block; font-family: var(--mono); font-size: 10.5px; padding: 0 5px; border-radius: 3px; border: 1px solid currentColor; margin-right: 6px; vertical-align: 1px; }
+.k-import, .k-class, .k-lib { color: var(--green); }
+.k-rpc { color: var(--out); }
+.k-http, .k-route { color: var(--in); }
+.k-event { color: var(--amber); }
+.k-function, .k-hook, .k-component, .k-const, .k-type, .k-enum { color: var(--muted); }
+.decl { border-top: 1px solid var(--line); padding-top: 7px; display: grid; gap: 3px; }
+.decl:first-of-type { border-top: 0; padding-top: 0; }
+.decl .dn { font-family: var(--mono); font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+.decl ul { gap: 1px; }
+.decl li { font-family: var(--mono); font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; padding-left: 12px; text-indent: -12px; }
+.decl li::before { content: "› "; color: var(--line); }
+.finding { display: grid; gap: 2px; }
+.finding .ft { font-weight: 500; font-size: 13.5px; }
+.callout { border-left: 3px solid var(--red); padding: 2px 0 2px 10px; display: grid; gap: 2px; }
+.sev { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.idx { display: grid; gap: 8px; }
+.idx h3 { display: flex; align-items: baseline; gap: 6px; margin: 0; }
+.count { font-family: var(--mono); font-size: 11px; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+.tier { display: grid; gap: 2px; }
+.tname { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.tier ul { gap: 0; }
+.row { display: flex; width: 100%; justify-content: space-between; align-items: baseline; gap: 10px; background: none; border: 0; padding: 4px 6px; margin: 0 -6px; width: calc(100% + 12px); border-radius: 4px; cursor: pointer; text-align: left; }
+.row:hover, .row:focus-visible { background: var(--band); outline: none; }
+.rname { font-weight: 500; overflow-wrap: anywhere; display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; }
+.rmeta { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.plus { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 11px; font-weight: 700; line-height: 1; }
+.sw.role-app { border-color: var(--out); } .sw.role-service { border-color: var(--in); } .sw.role-library { border-color: var(--green); }
+.fgroup { border-top: 1px solid var(--line); }
+.fgroup:first-of-type { border-top: 0; }
+.fgroup > summary { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; list-style: none; color: var(--ink); font-size: 14px; }
+.fgroup > summary::-webkit-details-marker { display: none; }
+.fgroup > summary::after { content: ""; width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(-45deg); margin-left: 2px; transition: transform .15s; }
+.fgroup[open] > summary::after { transform: rotate(45deg); }
+.fname { flex: 1; font-weight: 500; }
+.sevdot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.sevdot.design { background: var(--red); } .sevdot.smell { background: var(--amber); } .sevdot.check { background: var(--edge); }
+.fdesc { margin: 0 0 6px 16px; }
+.flist { margin: 0 0 8px 16px !important; gap: 8px !important; }
+.why > summary { font-size: 13px; }
+.why ul { margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .pele .pele-node, .pele .pele-edge { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title-row"><h1>repo-blueprint</h1><button class="helpbtn" id="helpbtn" aria-label="Help" title="Help">?</button></div>
+    <div class="toolbar">
+      <nav class="crumbs" id="crumbs" aria-label="Zoom path"></nav>
+      <div class="search">
+        <input id="q" type="search" placeholder="Search folders, files, classes, routes, events" autocomplete="off" aria-label="Search">
+        <div class="hits" id="hits" hidden></div>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </header>
+  <div class="main">
+    <div class="stage" id="stage" tabindex="0" aria-label="Diagram. Drag to pan, scroll or pinch to zoom.">
+      <div class="loading" id="loading">Loading…</div>
+      <div class="caption" id="caption"></div>
+      <div class="zoomctl"><button id="zin" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><button id="zout" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><button id="zfit" aria-label="Fit to screen" title="Fit to screen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    </div>
+    <aside id="insp" aria-live="polite"></aside>
+  </div>
+</div>
+
+<dialog id="help" aria-labelledby="help-title">
+  <div class="help-inner">
+    <header class="help-head"><h2 id="help-title">repo-blueprint</h2><button class="helpclose" id="helpclose" aria-label="Close help">Close</button></header>
+    <div class="help-body">
+      <section>
+        <h3>What it is</h3>
+        <p>A map of a codebase generated by static analysis. It reads the source with the TypeScript compiler and Python's own parser, resolves every import through the project's real config, and draws one diagram per folder with Pele. The same commit always produces the same page; nothing is guessed by AI.</p>
+      </section>
+      <section>
+        <h3>Reading a view</h3>
+        <p>Each view is one folder. Bands run top to bottom:</p>
+        <dl>
+          <dt>Dependents · outside</dt><dd>What uses this folder from elsewhere.</dd>
+          <dt>Frame</dt><dd>The folder itself. Its parts sit in tiers from <b>Ln · Entry</b> (nothing in here uses it) down to <b>L0 · Base</b> (uses nothing else in here). A part sits one tier above the highest thing it imports or calls.</dd>
+          <dt>Dependencies · outside</dt><dd>Other code in the repo this folder uses.</dd>
+          <dt>External dependencies</dt><dd>Every third-party package the code imports. Known drivers and SDKs are named by the system they reach, such as PostgreSQL or Stripe.</dd>
+        </dl>
+        <p>A dashed red box is an import cycle: its parts import each other, so they share a tier.</p>
+      </section>
+      <section>
+        <h3>Boxes and lines</h3>
+        <dl>
+          <dt>Border colour</dt><dd>Green library, blue service, pink app. Dashed boxes are outside the current folder.</dd>
+          <dt><span class="plus">+</span></dt><dd>The box has inner parts you can zoom into.</dd>
+          <dt>Lines</dt><dd>Import (solid), RPC call (thick), HTTP call (blue dashed), event subscription (amber, dot end), external dependency (grey dotted). Each points from the part that depends to the part it depends on.</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>Roles</h3>
+        <p>A package is a folder with a package.json and tsconfig.json, or a pyproject.toml. Its role comes from a declared type when there is one (Backstage catalog-info.yaml, Nx project.json), otherwise from the code:</p>
+        <dl>
+          <dt>App</dt><dd>An entry file that nothing imports mounts a UI.</dd>
+          <dt>Service</dt><dd>An entry file starts a server or worker, or there is a Dockerfile or start script.</dd>
+          <dt>Library</dt><dd>None of those: it only runs inside something else.</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>Findings</h3>
+        <p>Fixed rules over the same facts. Severity: <span class="sevdot design"></span> design issue, <span class="sevdot smell"></span> smell, <span class="sevdot check"></span> worth checking.</p>
+        <dl id="help-findings"></dl>
+      </section>
+      <section>
+        <h3>Controls</h3>
+        <dl>
+          <dt>Click</dt><dd>A box or line to inspect it. Lines list the files and names behind them.</dd>
+          <dt>Double-click</dt><dd>A box marked + to zoom in. Empty space in a band to fit it. Outside every band to zoom out.</dd>
+          <dt>Drag, scroll, pinch</dt><dd>Pan and zoom. Ctrl or ⌘ with scroll zooms.</dd>
+          <dt>Legend</dt><dd>Click a line type to switch it between always shown and shown only for the hovered box.</dd>
+          <dt>Esc</dt><dd>Clear the selection, then zoom out a level.</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>Running it</h3>
+        <p><code>npx repo-blueprint build &lt;repo&gt;</code> writes a standalone HTML file. <code>npx repo-blueprint watch &lt;repo&gt;</code> serves it and rebuilds on code changes. A repo can name more external systems, add message-bus method names and folder-role hints in a <code>.blueprint.json</code> at its root.</p>
+      </section>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const PACKED = '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';
+let DATA, M, V, viewByToken;
+async function loadData() {
+  const bin = Uint8Array.from(atob(PACKED), (c) => c.charCodeAt(0));
+  const text = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  DATA = JSON.parse(text);
+  M = DATA.model;
+  V = DATA.views;
+  viewByToken = Object.fromEntries(Object.entries(V).map(([id, v]) => [v.token, id]));
+}
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const state = { view: 'root', sel: null, edge: null, hover: null, layer: null, cam: { x: 0, y: 0, s: 1 }, busy: false };
+
+const stage = $('stage');
+const tokenOf = (id) => V[id].token;
+
+function mountLayer(viewId) {
+  const v = V[viewId];
+  const el = document.createElement('div');
+  el.className = 'layer';
+  el.innerHTML = v.svg;
+  const svg = el.querySelector('svg');
+  for (const g of svg.querySelectorAll('.pele-edge')) {
+    const e = v.edges[g.dataset.id];
+    if (!e) continue;
+    g.classList.add('k-' + e.kind);
+    const line = g.querySelector('path');
+    if (line) {
+      const hit = line.cloneNode(false);
+      hit.removeAttribute('stroke-dasharray');
+      hit.setAttribute('class', 'edge-hit');
+      g.insertBefore(hit, g.firstChild);
+    }
+  }
+  for (const g of svg.querySelectorAll('.pele-node')) {
+    const n = v.nodes[g.dataset.id];
+    if (!n) continue;
+    if (n.drill || (n.go && n.outer)) addDepthMark(g, !!n.drill);
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', labelOf(viewId, n.key) + (n.drill ? ', has inner parts' : ''));
+  }
+  stage.insertBefore(el, stage.firstChild);
+  fitClusterTitles(svg);
+  el._view = viewId;
+  wireLayer(el);
+  return el;
+}
+
+function fitClusterTitles(svg) {
+  for (const g of svg.querySelectorAll('.pele-cluster-title, .pele-cluster')) {
+    const rect = svg.querySelector(`.pele-cluster[data-id="${CSS.escape(g.dataset.id)}"] rect`);
+    if (!rect) continue;
+    const left = +rect.getAttribute('x') + 10;
+    const room = +rect.getAttribute('width') - 20;
+    const texts = [...g.querySelectorAll(':scope > text')];
+    for (const t of texts) {
+      t.setAttribute('text-anchor', 'start');
+      t.setAttribute('x', left);
+    }
+    const label = texts.find((t) => t.classList.contains('pele-cluster-label')) || texts[0];
+    if (label && label.getComputedTextLength() > room) {
+      const full = label.textContent;
+      let cut = full.length;
+      while (cut > 4 && label.getComputedTextLength() > room) label.textContent = '…' + full.slice(full.length - --cut);
+      for (const t of texts) t.textContent = label.textContent;
+      const tip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      tip.textContent = full;
+      g.appendChild(tip);
+    }
+  }
+}
+
+function addDepthMark(g, deep) {
+  const r = g.querySelector('rect');
+  if (!r) return;
+  const x = +r.getAttribute('x'), y = +r.getAttribute('y'), w = +r.getAttribute('width'), h = +r.getAttribute('height');
+  const ns = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+  if (!deep) {
+    g.appendChild(el('path', { class: 'go-badge', d: `M${x + w - 12},${y + 11}l7,-7M${x + w - 10},${y + 4}h5v5` }));
+    return;
+  }
+  for (const d of [6, 3]) g.insertBefore(el('rect', { x: x + d, y: y + d, width: w, height: h, rx: 5, class: 'stack' }), r);
+  const cx = x + w - 7.5, cy = y + 7.5;
+  const b = el('g', { class: 'drill-badge', role: 'button', 'aria-label': 'Zoom in' });
+  b.append(el('circle', { cx: cx - 1, cy: cy + 1, r: 10, class: 'hit' }), el('circle', { cx, cy, r: 5.5 }), el('path', { d: `M${cx - 2.5},${cy}h5M${cx},${cy - 2.5}v5` }));
+  const t = el('title', {});
+  t.textContent = 'Zoom in';
+  b.append(t);
+  g.appendChild(b);
+}
+
+function wireLayer(el) {
+  const v = V[el._view];
+  for (const g of el.querySelectorAll('.pele-node')) {
+    const n = v.nodes[g.dataset.id];
+    if (!n) continue;
+    g.addEventListener('mouseenter', () => { state.hover = n.key; paint(); });
+    g.addEventListener('mouseleave', () => { state.hover = null; paint(); });
+    g.addEventListener('focus', () => { state.hover = n.key; paint(); });
+    g.addEventListener('blur', () => { state.hover = null; paint(); });
+    g.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (state.dragged) return;
+      if (n.drill && e.target.closest('.drill-badge')) enter(n);
+      else select(n.key);
+    });
+    g.addEventListener('dblclick', (e) => { e.stopPropagation(); enter(n); });
+    g.addEventListener('keydown', (e) => { if (e.key === 'Enter') enter(n); if (e.key === ' ') { e.preventDefault(); select(n.key); } });
+  }
+  for (const g of el.querySelectorAll('.pele-edge')) {
+    const id = g.dataset.id;
+    if (!v.edges[id]) continue;
+    g.addEventListener('click', (e) => { e.stopPropagation(); if (state.dragged) return; selectEdge(id); });
+  }
+}
+
+function selectEdge(id) {
+  state.edge = state.edge === id ? null : id;
+  state.sel = null;
+  renderInspector();
+  paint();
+}
+
+function enter(n) {
+  if (n.drill) zoomInto(n.drill, n.key);
+  else if (n.go) travel(n.go, n.sel || null);
+}
+
+function nodeEl(layer, key) {
+  const mid = V[layer._view].keyToMid[key];
+  return mid ? layer.querySelector(`.pele-node[data-id="${mid}"]`) : null;
+}
+function svgBox(layer, el) {
+  const svg = layer.querySelector('svg');
+  const b = el.getBBox();
+  const t = el.transform && el.transform.baseVal.consolidate();
+  const m = t ? t.matrix : { e: 0, f: 0 };
+  return { x: b.x + m.e, y: b.y + m.f, w: b.width, h: b.height };
+}
+function nodeBox(layer, key) {
+  const g = nodeEl(layer, key);
+  if (!g) return null;
+  const r = g.querySelector('rect:not(.stack)') || g;
+  const b = r.getBBox();
+  const t = g.transform && g.transform.baseVal.consolidate();
+  const m = t ? t.matrix : { e: 0, f: 0 };
+  return { x: b.x + m.e, y: b.y + m.f, w: b.width, h: b.height };
+}
+function frameBox(layer) {
+  const c = layer.querySelector('.pele-cluster[data-id="FRAME"] rect');
+  return c ? svgBox(layer, c) : null;
+}
+function fitCam(box, pad = 0.92, maxS = 1.5) {
+  const W = stage.clientWidth, H = stage.clientHeight;
+  const s = Math.min(maxS, Math.min(W / box.w, H / box.h) * pad);
+  return { s, x: W / 2 - (box.x + box.w / 2) * s, y: H / 2 - (box.y + box.h / 2) * s };
+}
+function fullBox(layer) {
+  const v = V[layer._view];
+  return { x: 0, y: 0, w: v.width, h: v.height };
+}
+function homeCam(layer) {
+  const v = V[layer._view];
+  const W = stage.clientWidth, H = stage.clientHeight;
+  const fit = fitCam(fullBox(layer));
+  const readable = W < 600 ? 0.45 : 0.7;
+  if (fit.s >= readable) return fit;
+  const s = Math.min(1, Math.max(readable, (W / v.width) * 0.96));
+  const fb = frameBox(layer) || { x: 0, w: v.width };
+  const x = fb.w * s > W - 24 ? 12 - fb.x * s : W / 2 - (fb.x + fb.w / 2) * s;
+  return { s, x, y: 12 };
+}
+function apply(layer, cam, opacity) {
+  layer.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.s})`;
+  if (opacity !== undefined) layer.style.opacity = opacity;
+}
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+function tween(dur, fn, curve = ease) {
+  return new Promise((res) => {
+    if (reduce || dur === 0) { fn(1); res(); return; }
+    const t0 = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, Math.max(0, (now - t0) / dur));
+      fn(curve(t));
+      if (t < 1) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+const lerpCam = (a, b, t) => {
+  const s = Math.exp(Math.log(a.s) + (Math.log(b.s) - Math.log(a.s)) * t);
+  return { s, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+};
+function camMapping(fromBox, toScreen) {
+  const s = toScreen.w / fromBox.w;
+  return { s, x: toScreen.x - fromBox.x * s, y: toScreen.y - fromBox.y * s };
+}
+const screenOf = (cam, b) => ({ x: cam.x + b.x * cam.s, y: cam.y + b.y * cam.s, w: b.w * cam.s, h: b.h * cam.s });
+
+function containIn(box, rect, pad = 0.9) {
+  const sc = Math.min(rect.w / box.w, rect.h / box.h) * pad;
+  return { s: sc, x: rect.x + rect.w / 2 - (box.x + box.w / 2) * sc, y: rect.y + rect.h / 2 - (box.y + box.h / 2) * sc };
+}
+const nodeBox_ = (layer, key) => nodeBox(layer, key) || fullBox(layer);
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const clampRect = (r, W, H) => { const x0 = Math.max(0, r.x), y0 = Math.max(0, r.y); return { x: x0, y: y0, w: Math.min(W, r.x + r.w) - x0, h: Math.min(H, r.y + r.h) - y0 }; };
+
+function makePortal(parent, child, nodeBox, parentFrom, childTo) {
+  const W = stage.clientWidth, H = stage.clientHeight;
+  const cover = { s: Math.max(W / nodeBox.w, H / nodeBox.h) * 1.04 };
+  cover.x = W / 2 - (nodeBox.x + nodeBox.w / 2) * cover.s;
+  cover.y = H / 2 - (nodeBox.y + nodeBox.h / 2) * cover.s;
+  const fb = frameBox(child) || fullBox(child);
+  const wrap = document.createElement('div');
+  wrap.className = 'portal';
+  const edge = document.createElement('div');
+  edge.className = 'portal-edge';
+  wrap.appendChild(child);
+  stage.insertBefore(wrap, $('loading') || $('caption'));
+  stage.insertBefore(edge, $('loading') || $('caption'));
+  const r0 = screenOf(parentFrom, nodeBox);
+  const r1 = screenOf(cover, nodeBox);
+  const ncx = nodeBox.x + nodeBox.w / 2, ncy = nodeBox.y + nodeBox.h / 2;
+  const camAt = (u) => {
+    const w = Math.exp(Math.log(r0.w) + (Math.log(r1.w) - Math.log(r0.w)) * u);
+    const cx = r0.x + r0.w / 2 + (r1.x + r1.w / 2 - r0.x - r0.w / 2) * u;
+    const cy = r0.y + r0.h / 2 + (r1.y + r1.h / 2 - r0.y - r0.h / 2) * u;
+    const sc = w / nodeBox.w;
+    return { s: sc, x: cx - ncx * sc, y: cy - ncy * sc };
+  };
+  const frame = (u) => {
+    const pc = camAt(u);
+    apply(parent, pc, 1 - 0.7 * smooth(0.2, 1, u));
+    const r = screenOf(pc, nodeBox);
+    const rc = clampRect(r, W, H);
+    wrap.style.clipPath = `inset(${rc.y}px ${W - rc.x - rc.w}px ${H - rc.y - rc.h}px ${rc.x}px round ${6 + 4 * u}px)`;
+    wrap.style.opacity = smooth(0, 0.22, u);
+    Object.assign(edge.style, { left: rc.x + 'px', top: rc.y + 'px', width: rc.w + 'px', height: rc.h + 'px', opacity: String(1 - smooth(0.75, 1, u)) });
+    apply(child, lerpCam(containIn(fb, r, 0.86), childTo, smooth(0.55, 1, u)), smooth(0.12, 0.5, u));
+  };
+  const done = () => { wrap.remove(); edge.remove(); };
+  return { frame, done };
+}
+
+const STEP_MS = 720;
+
+async function zoomInto(viewId, fromKey) {
+  if (state.busy || !V[viewId]) return;
+  state.busy = true;
+  const parent = state.layer;
+  const box = nodeBox_(parent, fromKey);
+  const child = mountLayer(viewId);
+  child.style.opacity = 0;
+  const childTo = homeCam(child);
+  const p = makePortal(parent, child, box, { ...state.cam }, childTo);
+  await tween(STEP_MS, (t) => p.frame(t), easeOut);
+  stage.insertBefore(child, stage.firstChild);
+  p.done();
+  parent.remove();
+  setLayer(child, viewId);
+  state.cam = childTo;
+  apply(child, childTo, 1);
+  state.busy = false;
+  paint();
+}
+
+async function zoomOutTo(target) {
+  if (state.busy || state.view === target) return;
+  const chain = [];
+  for (let id = state.view; id !== target; id = V[id].parent) {
+    if (!V[id].parent) return;
+    chain.push(id);
+  }
+  state.busy = true;
+  const k = chain.length;
+  const layers = [state.layer];
+  for (const vid of [...chain.slice(1), target]) {
+    const l = mountLayer(vid);
+    l.style.opacity = 0;
+    layers.push(l);
+  }
+  const cams = layers.map((l, i) => (i === 0 ? { ...state.cam } : homeCam(l)));
+  let seg = -1;
+  let p = null;
+  const step = (i, u) => {
+    if (i !== seg) {
+      if (p) {
+        p.done();
+        layers[seg].remove();
+      }
+      seg = i;
+      p = makePortal(layers[i + 1], layers[i], nodeBox_(layers[i + 1], V[chain[i]].ref), cams[i + 1], cams[i]);
+    }
+    p.frame(u);
+  };
+  await tween(STEP_MS * (0.45 + 0.55 * k), (g) => {
+    const x = g * k;
+    const i = Math.min(k - 1, Math.floor(x));
+    step(i, 1 - (x - i));
+  }, k > 1 ? ease : easeOut);
+  step(k - 1, 0);
+  p.done();
+  layers[k - 1].remove();
+  const top = layers[k];
+  setLayer(top, target);
+  state.cam = cams[k];
+  apply(top, cams[k], 1);
+  state.sel = V[chain[k - 1]].ref;
+  state.busy = false;
+  renderInspector();
+  paint();
+}
+
+const zoomOut = () => (V[state.view].parent ? zoomOutTo(V[state.view].parent) : Promise.resolve());
+
+async function travel(viewId, sel = null) {
+  if (state.busy || !V[viewId]) return;
+  if (viewId === state.view) { if (sel) focusKey(sel); return; }
+  const target = V[viewId];
+  if (target.parent === state.view && sel === null) {
+    const n = Object.values(V[state.view].nodes).find((x) => x.drill === viewId);
+    if (n) return zoomInto(viewId, n.key);
+  }
+  if (V[state.view].parent === viewId) {
+    await zoomOut();
+    if (sel) focusKey(sel);
+    return;
+  }
+  state.busy = true;
+  const old = state.layer;
+  const layer = mountLayer(viewId);
+  const c1 = homeCam(layer);
+  const c0 = { ...c1, s: c1.s * 0.92, x: c1.x + stage.clientWidth * 0.04, y: c1.y + stage.clientHeight * 0.04 };
+  apply(layer, c0, 0);
+  await tween(380, (t) => { apply(layer, lerpCam(c0, c1, t), t); if (old) old.style.opacity = 1 - t; });
+  if (old) old.remove();
+  setLayer(layer, viewId);
+  state.cam = c1;
+  state.busy = false;
+  if (sel) focusKey(sel); else paint();
+}
+
+function setLayer(layer, viewId) {
+  state.layer = layer;
+  state.view = viewId;
+  state.sel = null;
+  state.edge = null;
+  state.hover = null;
+  try { history.replaceState(null, '', tokenOf(viewId) ? '#' + tokenOf(viewId) : location.pathname + location.search); } catch {}
+  renderCrumbs();
+  renderInspector();
+  renderCaption();
+}
+
+function focusKey(key) {
+  state.sel = key;
+  const b = nodeBox(state.layer, key);
+  if (b) {
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const s = Math.max(state.cam.s, 0.8);
+    const to = { s, x: W / 2 - (b.x + b.w / 2) * s, y: H / 2 - (b.y + b.h / 2) * s };
+    const from = { ...state.cam };
+    tween(420, (t) => { state.cam = lerpCam(from, to, t); apply(state.layer, state.cam); });
+  }
+  renderInspector();
+  paint();
+}
+
+function select(key) {
+  state.sel = state.sel === key ? null : key;
+  state.edge = null;
+  renderInspector();
+  paint();
+}
+
+function paint() {
+  const layer = state.layer;
+  if (!layer) return;
+  const v = V[state.view];
+  const svg = layer.querySelector('svg');
+  const focus = state.hover || state.sel;
+  const outs = new Set();
+  const ins = new Set();
+  if (focus) {
+    for (const e of v.all) {
+      if (e.from === focus) outs.add(e.to);
+      if (e.to === focus) ins.add(e.from);
+    }
+  }
+  svg.classList.toggle('focus', !!focus);
+  for (const g of svg.querySelectorAll('.pele-node')) {
+    const n = v.nodes[g.dataset.id];
+    const k = n && n.key;
+    const moreHit = k && k.startsWith('more:') && focus && v.more[k.slice(5)].some((x) => outs.has(x) || ins.has(x));
+    g.classList.toggle('sel', k === state.sel);
+    g.classList.toggle('nb-out', !!focus && (outs.has(k) || (moreHit && k === 'more:down')));
+    g.classList.toggle('nb-in', !!focus && !outs.has(k) && (ins.has(k) || (moreHit && k === 'more:up')));
+    g.classList.toggle('dim', !!focus && k !== focus && !outs.has(k) && !ins.has(k) && !moreHit);
+    g.classList.toggle('hit', !!(state.hits && state.hits.has(k)));
+  }
+  svg.classList.toggle('edge-focus', !!state.edge && !focus);
+  for (const g of svg.querySelectorAll('.pele-edge')) {
+    const e = v.edges[g.dataset.id];
+    g.classList.toggle('picked', g.dataset.id === state.edge);
+    g.classList.toggle('on', !!e && !!focus && (e.from === focus || e.to === focus || (e.collapsed && (e.from === 'FRAME' || e.to === 'FRAME') && (outs.has(e.from) || outs.has(e.to) || ins.has(e.from) || ins.has(e.to)))));
+  }
+}
+
+function labelOf(viewId, key) {
+  if (key.startsWith('more:')) return `${V[viewId].more[key.slice(5)].length} more`;
+  if (key.startsWith('ext:')) return key.slice(4);
+  if (key === 'FRAME') return `${V[viewId].title} (as a whole)`;
+  if (key.startsWith('pkg:')) return key.slice(4);
+  const n = M.nodes[key];
+  return n ? n.name : key.split('/').pop();
+}
+
+const filesUnderCache = new Map();
+function filesUnder(key) {
+  if (filesUnderCache.has(key)) return filesUnderCache.get(key);
+  const n = M.nodes[key];
+  const out = !n ? [] : n.type === 'file' ? [key] : n.children.flatMap(filesUnder);
+  filesUnderCache.set(key, out);
+  return out;
+}
+function viewFor(key) {
+  if (key.startsWith('pkg:')) return { view: 'root', sel: key };
+  let child = key;
+  for (let p = M.nodes[key] && M.nodes[key].parent; p; p = M.nodes[p].parent) {
+    if (V['v:' + p]) return { view: 'v:' + p, sel: child };
+    child = p;
+  }
+  return { view: 'root', sel: `pkg:${M.nodes[key].pkg}` };
+}
+function pathOf(key) {
+  if (key.startsWith('pkg:')) return M.packages[key.slice(4)].dir;
+  const n = M.nodes[key];
+  return n.type === 'file' ? key : n.path;
+}
+
+function renderCrumbs() {
+  const chain = [];
+  let id = state.view;
+  while (id) { chain.unshift(id); id = V[id].parent; }
+  $('crumbs').innerHTML = chain.map((vid, i) => `${i ? '<span class="sep">›</span>' : ''}<button data-v="${esc(vid)}" ${vid === state.view ? 'aria-current="true"' : ''}${vid === 'root' && state.summary ? ` title="${esc(state.summary)}"` : ''}>${esc(vid === 'root' ? M.repoName : V[vid].title)}</button>`).join('');
+  for (const b of $('crumbs').querySelectorAll('button')) b.addEventListener('click', async () => {
+    const target = b.dataset.v;
+    zoomOutTo(target);
+  });
+}
+
+function renderCaption() {
+  const v = V[state.view];
+  const n = Object.keys(v.nodes).filter((k) => !v.nodes[k].outer).length;
+  const bits = [`${n} parts`];
+  if (v.hiddenCount) bits.push(`${v.hiddenCount} implied links hidden`);
+  if ((v.cycles || []).length) bits.push(`${v.cycles.length} import cycle${v.cycles.length > 1 ? 's' : ''}`);
+  $('caption').textContent = bits.join(' · ');
+}
+
+const groupBy = (arr, f) => arr.reduce((m, x) => ((m[f(x)] ||= []).push(x), m), {});
+const short = (p) => p.split('/').slice(-2).join('/');
+
+function connList(list, side) {
+  if (!list.length) return '<p class="det">None in this view</p>';
+  return `<ul>${list.map((e) => {
+    const k = side === 'out' ? e.to : e.from;
+    const names = e.kind === 'import' ? e.details : e.details;
+    return `<li><span class="kind k-${e.kind}">${e.kind}</span><button class="link" data-k="${esc(k)}">${esc(labelOf(state.view, k))}</button><button class="link det" data-pair="${esc(e.from)}|${esc(e.to)}|${e.kind}" style="margin-left:6px">details</button>${names.length ? `<div class="det mono">${esc(names.slice(0, 10).join(', '))}${names.length > 10 ? ` +${names.length - 10}` : ''}</div>` : ''}</li>`;
+  }).join('')}</ul>`;
+}
+
+function declHtml(d, users) {
+  const members = [...(d.routes || []).map((r) => `<li><span class="kind k-route">route</span>${esc(r)}</li>`), ...(d.members || []).slice(0, 24).map((m) => `<li>${esc(m)}</li>`)];
+  const more = (d.members || []).length > 24 ? `<li>+${d.members.length - 24} more</li>` : '';
+  const head = (d.decorators || []).length ? `@${d.decorators.join(' @')}` : '';
+  const ext = d.extends && d.extends.length ? `extends ${d.extends.join(', ')}` : '';
+  const used = users ? `<div class="det">used by ${users.length}: ${esc(users.slice(0, 6).map((u) => labelOf(state.view, u)).join(', '))}${users.length > 6 ? '…' : ''}</div>` : '';
+  return `<div class="decl"><div class="dn"><span class="kind k-${esc(d.kind)}">${esc(d.kind)}</span>${esc(d.name)}${d.sig ? esc(d.sig) : ''}</div>${head || ext ? `<div class="det mono">${esc([head, ext].filter(Boolean).join(' · '))}</div>` : ''}${members.length ? `<ul>${members.join('')}${more}</ul>` : ''}${used}<div class="det mono">${esc(short(d.file || ''))}</div></div>`;
+}
+
+const FINDING_TYPES = {
+  'component-cycle': { label: 'Import cycle', desc: 'Parts of one package import each other in a loop, so none of them can be understood, tested or changed on its own.' },
+  'package-cycle': { label: 'Package cycle', desc: 'Whole packages import or call each other in a loop.' },
+  'role-mismatch': { label: 'Role mismatch', desc: 'The folder a package sits in implies one role (for example services/), but its code shows another.' },
+  'runnable-imported': { label: 'Runnable imported', desc: 'Another package imports code from an app or service, which couples their builds and deploys.' },
+  'unused-library': { label: 'Unused library', desc: 'A library with no entry point that no other package imports.' },
+  'disguised-alias': { label: 'Misleading alias', desc: 'A path alias that reads like a local import (@/...) but resolves into another package.' },
+  'rpc-no-server': { label: 'RPC without server', desc: 'An RPC subject is called, but no handler for it exists in the repo.' },
+  'event-no-subscriber': { label: 'Unheard event', desc: 'An event is published, but nothing in the repo subscribes to it.' },
+  'subscription-no-publisher': { label: 'Orphan subscription', desc: 'Something subscribes to an event that nothing in the repo publishes.' },
+  'skipped-files': { label: 'Not mapped', desc: 'Source files the analysis did not read, with the reason. Nothing they import or export is on the map.' },
+  'unresolved-import': { label: 'Unresolved import', desc: 'An import that does not resolve to a file, so it is missing from the map.' },
+  'dynamic-import': { label: 'Runtime import', desc: 'An import whose module is only known at runtime, so it is missing from the map.' },
+  'orphan-files': { label: 'Unimported files', desc: 'Files no other file imports that are not entry points. Often dead code.' },
+};
+const SEVERITY = {
+  design: { label: 'Design', desc: 'A structural problem in how the code is split up.' },
+  smell: { label: 'Smell', desc: 'Legal, but likely to mislead readers.' },
+  check: { label: 'Check', desc: 'Possibly fine. Static analysis cannot tell, so look at it.' },
+};
+const typeOf = (f) => FINDING_TYPES[f.type] || { label: f.type, desc: '' };
+
+function findingsIndex(list, title = 'Findings') {
+  if (!list.length) return '';
+  const groups = Object.values(groupBy(list, (f) => f.type));
+  const sevOrder = { design: 0, smell: 1, check: 2 };
+  groups.sort((a, b) => sevOrder[a[0].severity] - sevOrder[b[0].severity] || b.length - a.length);
+  return `<section class="idx"><h3>${esc(title)} <span class="count">${list.length}</span></h3>${groups.map((g) => {
+    const t = typeOf(g[0]);
+    const sev = SEVERITY[g[0].severity];
+    return `<details class="fgroup"><summary><span class="sevdot ${g[0].severity}" title="${esc(sev.label)}: ${esc(sev.desc)}"></span><span class="fname" title="${esc(t.desc)}">${esc(t.label)}</span><span class="count">${g.length}</span></summary><p class="det fdesc">${esc(t.desc)}</p><ul class="flist">${g.map(findingHtml).join('')}</ul></details>`;
+  }).join('')}</section>`;
+}
+function findingsFor(pred, title) {
+  return findingsIndex(M.findings.filter(pred), title);
+}
+function findingHtml(f) {
+  const files = f.files ? `<details><summary>${f.files.length} files</summary><ul>${f.files.map((x) => `<li><button class="link mono det" data-file="${esc(x)}">${esc(x)}</button></li>`).join('')}</ul></details>` : '';
+  const go = f.pkg && V['v:pkg:' + f.pkg] && !(state.view === 'v:pkg:' + f.pkg) ? ` <button class="link" data-goview="v:pkg:${esc(f.pkg)}">open ${esc(f.pkg)}</button>` : '';
+  return `<li class="finding"><span class="ft">${esc(f.title)}</span><span class="det">${esc(f.detail)}${go}</span>${files}</li>`;
+}
+
+function renderInspector() {
+  const v = V[state.view];
+  const key = state.sel;
+  let html = '';
+  if (state.edge) html = edgeHtml(v, v.edges[state.edge]);
+  else if (!key) html = v.kind === 'root' ? overviewHtml() : scopeHtml(v);
+  else if (key.startsWith('more:')) {
+    const side = key.slice(5);
+    html = `<h2>${v.more[side].length} more ${side === 'up' ? 'dependents' : 'dependencies'}</h2><p class="det">Collapsed to keep the outside layer readable. Ranked by number of connections.</p><ul>${v.more[side].map((k) => `<li><button class="link" data-k="${esc(k)}">${esc(labelOf(state.view, k))}</button></li>`).join('')}</ul>`;
+  } else if (key.startsWith('ext:')) html = extHtml(key, v);
+  else if (key.startsWith('pkg:')) html = pkgHtml(key, v);
+  else if (M.nodes[key] && M.nodes[key].type === 'file') html = fileHtml(key, v);
+  else html = dirHtml(key, v);
+  const insp = $('insp');
+  insp.innerHTML = html;
+  for (const b of insp.querySelectorAll('[data-k]')) b.addEventListener('click', () => {
+    const k = b.dataset.k;
+    if (V[state.view].keyToMid[k]) { focusKey(k); return; }
+    if (k.startsWith('pkg:')) { travel('root', k); return; }
+    if (M.nodes[k]) { const t = viewFor(k); travel(t.view, t.sel); }
+  });
+  for (const b of insp.querySelectorAll('[data-pair]')) b.addEventListener('click', () => {
+    const [from, to, kind] = b.dataset.pair.split('|');
+    const id = Object.keys(V[state.view].edges).find((eid) => { const e = V[state.view].edges[eid]; return e.from === from && e.to === to && e.kind === kind; });
+    if (id) selectEdge(id);
+    else { state.edge = null; $('insp').innerHTML = edgeHtml(V[state.view], { from, to, kind }); wireInspectorLinks(); }
+  });
+  wireInspectorLinks();
+}
+function wireInspectorLinks() {
+  const insp = $('insp');
+  for (const b of insp.querySelectorAll('[data-open]')) b.addEventListener('click', () => {
+    const n = Object.values(V[state.view].nodes).find((x) => x.key === b.dataset.open);
+    if (n) enter(n);
+  });
+  for (const b of insp.querySelectorAll('[data-goview]')) b.addEventListener('click', () => travel(b.dataset.goview));
+  for (const b of insp.querySelectorAll('[data-file]')) b.addEventListener('click', () => { const t = viewFor(b.dataset.file); travel(t.view, t.sel); });
+}
+
+function edgeHtml(v, e) {
+  if (!e) return '';
+  let list;
+  if (e.from === 'FRAME' || e.to === 'FRAME' || e.collapsed) {
+    const o = e.from === 'FRAME' ? e.to : e.to === 'FRAME' ? e.from : null;
+    const members = o && o.startsWith('more:') ? v.more[o.slice(5)] : [o];
+    list = v.all.filter((x) => x.kind === e.kind && (e.from === 'FRAME' ? members.includes(x.to) : members.includes(x.from)));
+  } else list = v.all.filter((x) => x.from === e.from && x.to === e.to && x.kind === e.kind);
+  const title = `${labelOf(state.view, e.from)} → ${labelOf(state.view, e.to)}`;
+  const verb = { import: 'imports from', rpc: 'calls over RPC', http: 'calls over HTTP', event: 'listens to events from', ext: 'uses' }[e.kind];
+  const body = list.map((x) => {
+    const pairs = (x.pairs || []).map((p) => `<li><button class="link mono" data-file="${esc(p.from)}">${esc(short(p.from))}</button> → <button class="link mono" data-file="${esc(p.to.startsWith('pkg:') || p.to.startsWith('ext:') ? '' : p.to)}">${esc(p.to.startsWith('pkg:') || p.to.startsWith('ext:') ? p.to.slice(4) : short(p.to))}</button>${p.names.length ? `<div class="det mono">${esc(p.names.join(', '))}</div>` : ''}</li>`).join('');
+    const extra = x.pairCount > (x.pairs || []).length ? `<li class="det">+${x.pairCount - x.pairs.length} more file pairs</li>` : '';
+    return `<div><h3>${esc(labelOf(state.view, x.from))} ${verb} ${esc(labelOf(state.view, x.to))}</h3><p class="det" style="margin-bottom:6px">${x.count} link${x.count > 1 ? 's' : ''} across ${x.pairCount} file pair${x.pairCount > 1 ? 's' : ''}</p><ul>${pairs}${extra}</ul></div>`;
+  }).join('');
+  const cyc = (v.cycles || []).find((c) => c.includes(e.from) && c.includes(e.to));
+  return `<h2>${esc(title)}</h2><p><span class="kind k-${e.kind}">${e.kind}</span></p>
+    ${cyc ? `<div class="callout"><span class="sev">Import cycle</span><span class="det">Both ends are in a ${cyc.length}-part cycle. Moving these names or inverting this import breaks the link.</span></div>` : ''}
+    ${body || '<p class="det">No file-level detail for this line.</p>'}`;
+}
+
+function extHtml(key, v) {
+  const name = key.slice(4);
+  const pkgs = M.externalSystems[name];
+  const users = v.all.filter((e) => e.to === key);
+  const what = pkgs ? `External system, outside the repo. Detected from imports of: <span class="mono">${esc(pkgs.join(', '))}</span>` : 'Third-party package, imported from outside the repo.';
+  return `<h2>${esc(name)}</h2><p class="det">${what}</p>
+    <div><h3>Used by, in this view</h3><ul>${users.map((e) => `<li><button class="link" data-k="${esc(e.from)}">${esc(labelOf(state.view, e.from))}</button><div class="det mono">${esc(e.details.join(', '))} · ${e.count} file${e.count > 1 ? 's' : ''}</div></li>`).join('')}</ul></div>`;
+}
+
+function thirdPartyHtml(list) {
+  if (!list || !list.length) return '';
+  return `<details><summary>${list.length} third-party packages</summary><div class="chips" style="margin-top:6px">${list.map(([n, c]) => `<span class="chip">${esc(n)} <span class="det">${c}</span></span>`).join('')}</div></details>`;
+}
+
+function viewConns(key, v) {
+  const outs = v.all.filter((e) => e.from === key);
+  const ins = v.all.filter((e) => e.to === key);
+  return `<div><h3>Depends on ↓</h3>${connList(outs, 'out')}</div><div><h3>Used by ↑</h3>${connList(ins, 'in')}</div>`;
+}
+
+function entryHtml(fileKeys) {
+  const rows = [];
+  const outs = [];
+  for (const k of fileKeys) {
+    const f = M.files[k];
+    for (const r of f.entry.routes) rows.push(`<li><span class="kind k-http">rest</span><span class="mono">${esc(r.route)}</span><div class="det">${esc(r.cls)}</div></li>`);
+    for (const s of f.entry.rpcServe) rows.push(`<li><span class="kind k-rpc">rpc in</span><span class="mono">${esc(s)}</span></li>`);
+    for (const s of f.entry.subscribe) rows.push(`<li><span class="kind k-event">listens</span><span class="mono">${esc(s)}</span></li>`);
+    for (const b of f.boot) rows.push(`<li><span class="kind k-class">starts</span><span class="mono">${esc(b)}</span> <span class="det">${esc(short(k))}</span></li>`);
+    for (const m of f.mount) rows.push(`<li><span class="kind k-class">mounts UI</span><span class="mono">${esc(m)}</span> <span class="det">${esc(short(k))}</span></li>`);
+    for (const s of f.out.rpcCall) outs.push(`<li><span class="kind k-rpc">rpc out</span><span class="mono">${esc(s)}</span></li>`);
+    for (const s of f.out.publish) outs.push(`<li><span class="kind k-event">emits</span><span class="mono">${esc(s)}</span></li>`);
+    for (const [s, n] of Object.entries(f.out.http)) outs.push(`<li><span class="kind k-http">http</span>${esc(s)}</li>`);
+  }
+  const uniq = (a) => [...new Set(a)];
+  return `${rows.length ? `<div><h3>Entry points · ${uniq(rows).length}</h3>${clamp(uniq(rows))}</div>` : ''}${outs.length ? `<div><h3>Reaches out · ${uniq(outs).length}</h3>${clamp(uniq(outs))}</div>` : ''}`;
+}
+
+function clamp(items, n = 8, wrap = (x) => `<ul>${x.join('')}</ul>`) {
+  if (items.length <= n) return wrap(items);
+  return `${wrap(items.slice(0, n))}<details class="more-list"><summary>Show all ${items.length}</summary>${wrap(items.slice(n))}</details>`;
+}
+
+function providedHtml(key) {
+  const list = M.provided[key] || [];
+  if (!list.length) return '<div><h3>Interface used by others</h3><p class="det">Nothing in here is imported from outside it.</p></div>';
+  const items = list.slice(0, 40).map((p) => {
+    const d = (M.files[p.file]?.decls || []).find((x) => x.name === p.name) || { name: p.name, kind: p.name === 'default' ? 'default' : 'export' };
+    return declHtml({ ...d, file: p.file }, p.users);
+  });
+  return `<div><h3>Interface used by others · ${list.length}</h3>${clamp(items, 6, (x) => x.join(''))}${list.length > 40 ? `<p class="det">Showing 40 of ${list.length}.</p>` : ''}</div>`;
+}
+
+function openBtn(key, v, n) {
+  const node = Object.values(v.nodes).find((x) => x.key === key);
+  if (!node || !(node.drill || node.go)) return '';
+  const icon = node.drill
+    ? '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9"/><path d="M6 10h8M10 6v8"/></svg>'
+    : '<svg viewBox="0 0 20 20" aria-hidden="true"><path class="go" d="M6 14l8-8M8 6h6v6"/></svg>';
+  const label = node.drill ? 'Zoom in' : 'Go to it';
+  return `<button class="open ${node.drill ? 'zoom' : 'go'}" data-open="${esc(key)}" aria-label="${label}" title="${label}">${icon}</button>`;
+}
+
+function roleHtml(p) {
+  const label = { app: 'app', service: 'service', library: 'library' }[p.role];
+  const why = p.evidence.length ? `<ul>${p.evidence.map((e) => `<li class="det">${esc(e.why)}</li>`).join('')}</ul>` : '<p class="det">No entry point, Dockerfile, start script or declared type, so it can only run inside something else.</p>';
+  return `<details class="why"><summary>Why ${label} (${p.roleSource})</summary>${why}</details>`;
+}
+
+function pkgHtml(key, v) {
+  const p = M.packages[key.slice(4)];
+  const n = M.nodes[key];
+  return `<h2>${esc(p.id)}</h2><p class="path mono">${esc(p.dir)}</p>
+    <div class="facts"><span><b>${esc(p.role)}</b></span><span><b>${esc(p.runtime)}</b></span><span><b>${p.files}</b> files</span><span><b>${p.lines.toLocaleString()}</b> lines</span>${v.levels && v.levels[key] !== undefined ? `<span>tier <b>L${v.levels[key]}</b></span>` : ''}</div>
+    ${openBtn(key, v, n ? n.children.length : 0)}${roleHtml(p)}${viewConns(key, v)}${providedHtml(key)}${thirdPartyHtml(M.thirdParty[key])}${findingsFor((f) => f.pkg === p.id || (f.members || []).includes(p.id) || (f.members || []).includes(key))}`;
+}
+
+function dirHtml(key, v) {
+  const n = M.nodes[key];
+  const fk = filesUnder(key);
+  const lines = fk.reduce((a, k) => a + M.files[k].lines, 0);
+  const cyc = (v.cycles || []).find((c) => c.includes(key));
+  return `<h2>${esc(n.name)}</h2><p class="path mono">${esc(n.path)}</p>
+    <div class="facts"><span><b>${fk.length}</b> files</span><span><b>${lines.toLocaleString()}</b> lines</span>${v.levels && v.levels[key] !== undefined ? `<span>tier <b>L${v.levels[key]}</b></span>` : ''}<span><b>${n.children.length}</b> parts</span></div>
+    ${openBtn(key, v, n.children.length)}
+    ${cyc ? `<div class="callout"><span class="sev">Import cycle</span><span class="ft">In an import cycle with ${cyc.length - 1} other part${cyc.length > 2 ? 's' : ''}</span><span class="det">${esc(cyc.filter((k) => k !== key).map((k) => labelOf(state.view, k)).join(', '))}. Click a line to see which names cause it.</span></div>` : ''}
+    ${entryHtml(fk)}${viewConns(key, v)}${providedHtml(key)}${thirdPartyHtml(M.thirdParty[key])}`;
+}
+
+function fileHtml(key, v) {
+  const f = M.files[key];
+  const used = Object.fromEntries((M.provided[key] || []).map((p) => [p.name, p.users]));
+  const cyc = (v.cycles || []).find((c) => c.includes(key));
+  return `<h2>${esc(M.nodes[key].name)}</h2><p class="path mono">${esc(key)}</p>
+    <div class="facts"><span><b>${f.lines}</b> lines</span><span><b>${f.decls.length}</b> exports</span>${v.levels && v.levels[key] !== undefined ? `<span>tier <b>L${v.levels[key]}</b></span>` : ''}</div>
+    ${cyc ? `<div class="callout"><span class="sev">Import cycle</span><span class="ft">In an import cycle with ${cyc.length - 1} other part${cyc.length > 2 ? 's' : ''}</span><span class="det">Click a line to see which names cause it.</span></div>` : ''}
+    ${entryHtml([key])}${viewConns(key, v)}
+    <div><h3>Exports · ${f.decls.length}</h3>${f.decls.length ? clamp(f.decls.map((d) => declHtml({ ...d, file: key }, used[d.name])), 6, (x) => x.join('')) : '<p class="det">None</p>'}</div>`;
+}
+
+function partsIndex(v) {
+  const keys = Object.values(v.nodes).filter((n) => !n.outer).map((n) => n.key);
+  const byTier = groupBy(keys, (k) => v.levels[k] ?? 0);
+  const tiers = Object.keys(byTier).map(Number).sort((a, b) => b - a);
+  const max = tiers[0];
+  const row = (k) => {
+    const node = Object.values(v.nodes).find((n) => n.key === k);
+    const meta = k.startsWith('pkg:') ? M.packages[k.slice(4)].runtime : M.nodes[k].type === 'file' ? `${M.files[k].lines} lines` : `${M.nodes[k].files} file${M.nodes[k].files === 1 ? '' : 's'}`;
+    return `<li><button class="row" data-k="${esc(k)}"><span class="rname">${esc(labelOf(state.view, k))}${node && node.drill ? '<span class="plus" title="Has inner parts">+</span>' : ''}</span><span class="rmeta">${esc(meta)}</span></button></li>`;
+  };
+  return `<section class="idx"><h3>Parts <span class="count">${keys.length}</span></h3>${tiers.map((t) => `<div class="tier"><div class="tname">L${t}${t === max && max > 0 ? ' · Entry' : t === 0 ? ' · Base' : ''}</div><ul>${byTier[t].sort((a, b) => labelOf(state.view, a).localeCompare(labelOf(state.view, b))).map(row).join('')}</ul></div>`).join('')}</section>`;
+}
+
+function scopeHtml(v) {
+  const key = v.ref;
+  if (v.kind === 'pkg') {
+    const p = M.packages[key.slice(4)];
+    return `<h2>${esc(p.id)}</h2><p class="path mono">${esc(p.dir)}</p>
+      <div class="facts"><span><b>${esc(p.role)}</b></span><span><b>${esc(p.runtime)}</b></span><span><b>${p.files}</b> files</span><span><b>${p.lines.toLocaleString()}</b> lines</span></div>
+      ${partsIndex(v)}${findingsFor((f) => f.pkg === p.id || (f.members || []).includes(p.id) || (f.members || []).includes(key))}${roleHtml(p)}`;
+  }
+  const n = M.nodes[key];
+  const fk = filesUnder(key);
+  return `<h2>${esc(n.name)}</h2><p class="path mono">${esc(n.path)}</p>
+    <div class="facts"><span><b>${fk.length}</b> files</span><span><b>${fk.reduce((a, k) => a + M.files[k].lines, 0).toLocaleString()}</b> lines</span></div>
+    ${partsIndex(v)}${entryHtml(fk)}`;
+}
+
+function overviewHtml() {
+  const pk = Object.values(M.packages);
+  const roles = [['app', 'Apps'], ['service', 'Services'], ['library', 'Libraries']];
+  const pkgIdx = roles.map(([r, label]) => {
+    const list = pk.filter((p) => p.role === r).sort((a, b) => a.id.localeCompare(b.id));
+    if (!list.length) return '';
+    return `<div class="tier"><div class="tname"><span class="sw role-${r}"></span>${label} <span class="count">${list.length}</span></div><ul>${list.map((p) => `<li><button class="row" data-k="${esc(p.key)}"><span class="rname">${esc(p.id)}</span><span class="rmeta">${esc(p.runtime)} · ${p.files} files</span></button></li>`).join('')}</ul></div>`;
+  }).join('');
+  return `<section class="idx"><h3>Packages <span class="count">${pk.length}</span></h3>${pkgIdx}</section>${findingsIndex(M.findings)}`;
+}
+
+const EDGE_KINDS = [
+  { k: 'import', label: 'import', dash: '', color: 'var(--edge)' },
+  { k: 'rpc', label: 'RPC', dash: 'thick', color: 'var(--out)' },
+  { k: 'http', label: 'HTTP', dash: '3 4', color: 'var(--in)' },
+  { k: 'event', label: 'event', dash: '3 4', color: 'var(--amber)', end: true },
+  { k: 'ext', label: 'external', dash: '2 3', color: 'var(--muted)' },
+];
+const DEFAULT_ON = ['import', 'rpc', 'http'];
+function loadEdgeKinds() {
+  try {
+    const v = JSON.parse(localStorage.getItem('blueprint-edge-kinds'));
+    if (Array.isArray(v)) return new Set(v);
+  } catch {}
+  return new Set(DEFAULT_ON);
+}
+function applyEdgeKinds(on) {
+  for (const { k } of EDGE_KINDS) stage.classList.toggle('off-' + k, !on.has(k));
+  try { localStorage.setItem('blueprint-edge-kinds', JSON.stringify([...on])); } catch {}
+}
+function renderLegend() {
+  const line = (dash, color, end) => `<svg width="30" height="10" aria-hidden="true"><line x1="1" y1="5" x2="${end ? 23 : 29}" y2="5" stroke="${color}" stroke-width="${dash === 'thick' ? 3 : 1.6}" ${dash && dash !== 'thick' ? `stroke-dasharray="${dash}"` : ''}/>${end ? `<circle cx="26" cy="5" r="3" fill="${color}"/>` : ''}</svg>`;
+  const on = loadEdgeKinds();
+  $('legend').innerHTML = `<span><span class="sw" style="border-color:var(--green)"></span>library</span><span><span class="sw" style="border-color:var(--in)"></span>service</span><span><span class="sw" style="border-color:var(--out)"></span>app</span>
+    <span><span class="sw" style="border-color:var(--red);border-style:dashed"></span>import cycle</span>
+    <span><span class="sw" style="border-color:var(--muted);border-style:dotted"></span>external</span>
+    ${EDGE_KINDS.map((e) => `<button class="tog" data-kind="${e.k}" aria-pressed="${on.has(e.k)}" title="${e.label} lines: on shows them always, off shows them only for the hovered box">${line(e.dash, e.color, e.end)}${e.label}</button>`).join('')}
+`;
+  for (const b of $('legend').querySelectorAll('.tog')) b.addEventListener('click', () => {
+    const k = b.dataset.kind;
+    if (on.has(k)) on.delete(k); else on.add(k);
+    b.setAttribute('aria-pressed', String(on.has(k)));
+    applyEdgeKinds(on);
+  });
+  applyEdgeKinds(on);
+}
+
+function clusterAt(cx, cy) {
+  let best = null;
+  for (const g of state.layer.querySelectorAll('.pele-cluster')) {
+    const r = g.querySelector('rect');
+    if (!r) continue;
+    const b = r.getBoundingClientRect();
+    if (cx < b.left || cx > b.right || cy < b.top || cy > b.bottom) continue;
+    if (!best || b.width * b.height < best.area) best = { area: b.width * b.height, box: svgBox(state.layer, r) };
+  }
+  return best && best.box;
+}
+function fitTo(box) {
+  const from = { ...state.cam };
+  const to = fitCam(box, 0.9, 2);
+  tween(480, (t) => { state.cam = lerpCam(from, to, t); apply(state.layer, state.cam); });
+}
+
+function setupPanZoom() {
+  let drag = null;
+  const pointers = new Map();
+  const zoomAt = (px, py, f) => {
+    const c = state.cam;
+    const s = Math.min(4, Math.max(0.05, c.s * f));
+    state.cam = { s, x: px - (px - c.x) * (s / c.s), y: py - (py - c.y) * (s / c.s) };
+    apply(state.layer, state.cam);
+  };
+  stage.addEventListener('wheel', (e) => {
+    if (state.busy) return;
+    e.preventDefault();
+    const r = stage.getBoundingClientRect();
+    if (e.ctrlKey || e.metaKey || e.altKey) zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.01));
+    else { state.cam = { ...state.cam, x: state.cam.x - e.deltaX, y: state.cam.y - e.deltaY }; apply(state.layer, state.cam); }
+  }, { passive: false });
+  stage.addEventListener('pointerdown', (e) => {
+    if (state.busy || e.target.closest('button')) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    drag = { x: e.clientX, y: e.clientY, cam: { ...state.cam }, moved: false };
+    state.dragged = false;
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!drag || !pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const other = [...pointers.entries()].find(([id]) => id !== e.pointerId)[1];
+      const d0 = Math.hypot(prev.x - other.x, prev.y - other.y);
+      const d1 = Math.hypot(a.x - b.x, a.y - b.y);
+      const r = stage.getBoundingClientRect();
+      if (d0 > 0) zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, d1 / d0);
+      return;
+    }
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) { drag.moved = true; state.dragged = true; stage.classList.add('panning'); }
+    if (drag.moved) { state.cam = { ...drag.cam, x: drag.cam.x + dx, y: drag.cam.y + dy }; apply(state.layer, state.cam); }
+  });
+  const up = (e) => { pointers.delete(e.pointerId); if (!pointers.size) { drag = null; stage.classList.remove('panning'); setTimeout(() => (state.dragged = false), 0); } };
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', up);
+  stage.addEventListener('click', (e) => { if (!e.target.closest('.pele-node') && !e.target.closest('.pele-edge') && !e.target.closest('button') && !state.dragged && (state.sel || state.edge)) { state.sel = null; state.edge = null; renderInspector(); paint(); } });
+  stage.addEventListener('dblclick', (e) => {
+    if (e.target.closest('.pele-node') || e.target.closest('button') || state.busy) return;
+    const cluster = clusterAt(e.clientX, e.clientY);
+    if (cluster) fitTo(cluster);
+    else zoomOut();
+  });
+  const center = () => ({ x: stage.clientWidth / 2, y: stage.clientHeight / 2 });
+  $('zin').addEventListener('click', () => { const c = center(); zoomAt(c.x, c.y, 1.3); });
+  $('zout').addEventListener('click', () => { const c = center(); zoomAt(c.x, c.y, 1 / 1.3); });
+  $('zfit').addEventListener('click', () => { const from = { ...state.cam }; const to = fitCam(fullBox(state.layer)); tween(380, (t) => { state.cam = lerpCam(from, to, t); apply(state.layer, state.cam); }); });
+  stage.addEventListener('keydown', (e) => {
+    if (e.target !== stage) return;
+    const step = 60;
+    if (e.key === '+' || e.key === '=') $('zin').click();
+    if (e.key === '-') $('zout').click();
+    if (e.key.startsWith('Arrow')) { e.preventDefault(); const d = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key]; state.cam = { ...state.cam, x: state.cam.x + d[0], y: state.cam.y + d[1] }; apply(state.layer, state.cam); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('help').open) return;
+    if (e.key === 'Escape' && document.activeElement !== $('q')) { if (state.sel || state.edge) { state.sel = null; state.edge = null; renderInspector(); paint(); } else zoomOut(); }
+  });
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (!state.busy) { state.cam = homeCam(state.layer); apply(state.layer, state.cam); } }, 120); });
+}
+
+function searchIndex() {
+  const idx = [];
+  for (const p of Object.values(M.packages)) idx.push({ t: p.id, label: p.id, kind: 'package', where: `${p.role} · ${p.dir}`, key: p.key });
+  for (const n of Object.values(M.nodes)) {
+    if (n.type === 'dir') idx.push({ t: n.name, label: n.name, kind: 'folder', where: n.path, key: n.key });
+    if (n.type === 'file') idx.push({ t: n.name, label: n.name, kind: 'file', where: n.key, key: n.key, code: true });
+  }
+  for (const f of Object.values(M.files)) {
+    for (const d of f.decls) {
+      idx.push({ t: d.name, label: d.name, kind: d.kind, where: f.key, key: f.key, code: true });
+      for (const m of d.members || []) idx.push({ t: m, label: `${d.name}.${m}`, kind: 'method', where: f.key, key: f.key, code: true });
+    }
+    for (const r of f.entry.routes) idx.push({ t: r.route, label: r.route, kind: 'route', where: `${f.key} · ${r.cls}`, key: f.key, code: true });
+    for (const s of [...f.entry.rpcServe, ...f.entry.subscribe, ...f.out.rpcCall, ...f.out.publish]) idx.push({ t: s, label: s, kind: 'message', where: f.key, key: f.key, code: true });
+  }
+  return idx;
+}
+function setupSearch() {
+  let idx = null;
+  const q = $('q');
+  const hits = $('hits');
+  let list = [];
+  const rank = { package: 0, folder: 1, route: 2, message: 2, file: 3, class: 4 };
+  const run = () => {
+    const s = q.value.trim().toLowerCase();
+    if (s.length < 2) { hits.hidden = true; return; }
+    idx ||= searchIndex();
+    list = idx.filter((r) => r.t.toLowerCase().includes(s)).sort((a, b) => (rank[a.kind] ?? 5) - (rank[b.kind] ?? 5) || (a.t.toLowerCase() === s ? -1 : 0) - (b.t.toLowerCase() === s ? -1 : 0) || a.t.length - b.t.length).slice(0, 50);
+    hits.innerHTML = list.length ? list.map((r, i) => `<button data-i="${i}"><span class="hk">${esc(r.kind)}</span><span class="${r.code ? 'mono' : ''}">${esc(r.label)}</span><span class="hp">${esc(r.where)}</span></button>`).join('') : '<p class="det" style="padding:8px 12px;margin:0">No matches</p>';
+    hits.hidden = false;
+    for (const b of hits.querySelectorAll('button')) b.addEventListener('click', () => pick(list[+b.dataset.i]));
+  };
+  const pick = (r) => { hits.hidden = true; const t = viewFor(r.key); travel(t.view, t.sel); };
+  q.addEventListener('input', run);
+  q.addEventListener('keydown', (e) => { if (e.key === 'Enter' && list[0]) pick(list[0]); if (e.key === 'Escape') { q.value = ''; hits.hidden = true; } });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.search')) hits.hidden = true; });
+}
+
+function setupHelp() {
+  const dlg = $('help');
+  $('help-findings').innerHTML = Object.entries(FINDING_TYPES).map(([, t]) => `<dt>${esc(t.label)}</dt><dd>${esc(t.desc)}</dd>`).join('');
+  $('helpbtn').addEventListener('click', () => dlg.showModal());
+  $('helpclose').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+}
+
+async function init() {
+  renderLegend();
+  try {
+    await loadData();
+  } catch (err) {
+    $('loading').textContent = 'This browser cannot unpack the map. Open it in a current Chrome, Edge, Safari or Firefox.';
+    return;
+  }
+  $('loading').remove();
+  const pk = Object.values(M.packages);
+  const g = (k) => pk.filter((p) => p.role === k).length;
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : w.endsWith('y') ? '' : 's'}`.replace(/ys$/, 'ies');
+  const nFiles = Object.keys(M.files).length;
+  const parts = [g('app') && plural(g('app'), 'app'), g('service') && plural(g('service'), 'service'), g('library') && `${g('library')} ${g('library') === 1 ? 'library' : 'libraries'}`, `${nFiles.toLocaleString()} files`].filter(Boolean);
+  state.summary = `${parts.join(' · ')}${DATA.commit ? ` · ${DATA.branch}@${DATA.commit}` : ''} · repo-blueprint ${DATA.version}`;
+  $('help-title').textContent = `repo-blueprint ${DATA.version}`;
+  document.title = `${M.repoName} blueprint`;
+  setupPanZoom();
+  setupSearch();
+  setupHelp();
+  const start = viewByToken[location.hash.slice(1)] || 'root';
+  const layer = mountLayer(start);
+  setLayer(layer, start);
+  state.cam = homeCam(layer);
+  apply(layer, state.cam, 1);
+  paint();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+</script>
+</body>
+</html>

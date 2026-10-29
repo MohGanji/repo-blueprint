@@ -12,7 +12,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
 const HOME = path.join(os.homedir(), '.repo-blueprint');
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.venv', 'venv', '.nx', 'tmp', '.next', 'out', '.turbo']);
-const WATCHED = /\.(tsx?|py)$|(^|\/)(package\.json|tsconfig[\w.-]*\.json|pyproject\.toml|project\.json|catalog-info\.ya?ml|\.blueprint\.json|Dockerfile)$/;
+const WATCHED = /\.(tsx?|jsx?|mts|cts|mjs|cjs|py)$|(^|\/)(package\.json|[tj]sconfig[\w.-]*\.json|pyproject\.toml|project\.json|catalog-info\.ya?ml|\.blueprint\.json|Dockerfile)$/;
 const IGNORED = /(^|\/)(node_modules|\.git|dist|build|coverage|\.venv|venv|__pycache__|\.nx|tmp|\.next|out|\.turbo|playwright-report|test-results)(\/|$)/;
 
 const HELP = `repo-blueprint: map a code repository by static analysis.

@@ -271,7 +271,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
           <dt>Dependents · outside</dt><dd>What uses this folder from elsewhere.</dd>
           <dt>Frame</dt><dd>The folder itself. Its parts sit in tiers from <b>Ln · Entry</b> (nothing in here uses it) down to <b>L0 · Base</b> (uses nothing else in here). A part sits one tier above the highest thing it imports or calls.</dd>
           <dt>Dependencies · outside</dt><dd>Other code in the repo this folder uses.</dd>
-          <dt>External systems</dt><dd>Databases, brokers and vendors, detected from the packages the code imports.</dd>
+          <dt>External dependencies</dt><dd>Every third-party package the code imports. Known drivers and SDKs are named by the system they reach, such as PostgreSQL or Stripe.</dd>
         </dl>
         <p>A dashed red box is an import cycle: its parts import each other, so they share a tier.</p>
       </section>
@@ -280,7 +280,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
         <dl>
           <dt>Border colour</dt><dd>Green library, blue service, pink app. Dashed boxes are outside the current folder.</dd>
           <dt><span class="plus">+</span></dt><dd>The box has inner parts you can zoom into.</dd>
-          <dt>Lines</dt><dd>Import (solid), RPC call (thick), HTTP call (blue dashed), event subscription (amber, dot end), external system (grey dotted). Each points from the part that depends to the part it depends on.</dd>
+          <dt>Lines</dt><dd>Import (solid), RPC call (thick), HTTP call (blue dashed), event subscription (amber, dot end), external dependency (grey dotted). Each points from the part that depends to the part it depends on.</dd>
         </dl>
       </section>
       <section>
@@ -309,7 +309,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
       </section>
       <section>
         <h3>Running it</h3>
-        <p><code>npx repo-blueprint build &lt;repo&gt;</code> writes a standalone HTML file. <code>npx repo-blueprint watch &lt;repo&gt;</code> serves it and rebuilds on code changes. A repo can add external systems, message-bus method names and folder-role hints in a <code>.blueprint.json</code> at its root.</p>
+        <p><code>npx repo-blueprint build &lt;repo&gt;</code> writes a standalone HTML file. <code>npx repo-blueprint watch &lt;repo&gt;</code> serves it and rebuilds on code changes. A repo can name more external systems, add message-bus method names and folder-role hints in a <code>.blueprint.json</code> at its root.</p>
       </section>
     </div>
   </div>
@@ -812,6 +812,9 @@ const FINDING_TYPES = {
   'rpc-no-server': { label: 'RPC without server', desc: 'An RPC subject is called, but no handler for it exists in the repo.' },
   'event-no-subscriber': { label: 'Unheard event', desc: 'An event is published, but nothing in the repo subscribes to it.' },
   'subscription-no-publisher': { label: 'Orphan subscription', desc: 'Something subscribes to an event that nothing in the repo publishes.' },
+  'skipped-files': { label: 'Not mapped', desc: 'Source files the analysis did not read, with the reason. Nothing they import or export is on the map.' },
+  'unresolved-import': { label: 'Unresolved import', desc: 'An import that does not resolve to a file, so it is missing from the map.' },
+  'dynamic-import': { label: 'Runtime import', desc: 'An import whose module is only known at runtime, so it is missing from the map.' },
   'orphan-files': { label: 'Unimported files', desc: 'Files no other file imports that are not entry points. Often dead code.' },
 };
 const SEVERITY = {
@@ -903,9 +906,10 @@ function edgeHtml(v, e) {
 
 function extHtml(key, v) {
   const name = key.slice(4);
-  const pkgs = M.externalSystems[name] || [];
+  const pkgs = M.externalSystems[name];
   const users = v.all.filter((e) => e.to === key);
-  return `<h2>${esc(name)}</h2><p class="det">External system, outside the repo. Detected from imports of: <span class="mono">${esc(pkgs.join(', '))}</span></p>
+  const what = pkgs ? `External system, outside the repo. Detected from imports of: <span class="mono">${esc(pkgs.join(', '))}</span>` : 'Third-party package, imported from outside the repo.';
+  return `<h2>${esc(name)}</h2><p class="det">${what}</p>
     <div><h3>Used by, in this view</h3><ul>${users.map((e) => `<li><button class="link" data-k="${esc(e.from)}">${esc(labelOf(state.view, e.from))}</button><div class="det mono">${esc(e.details.join(', '))} · ${e.count} file${e.count > 1 ? 's' : ''}</div></li>`).join('')}</ul></div>`;
 }
 
@@ -1063,7 +1067,7 @@ function renderLegend() {
   const on = loadEdgeKinds();
   $('legend').innerHTML = `<span><span class="sw" style="border-color:var(--green)"></span>library</span><span><span class="sw" style="border-color:var(--in)"></span>service</span><span><span class="sw" style="border-color:var(--out)"></span>app</span>
     <span><span class="sw" style="border-color:var(--red);border-style:dashed"></span>import cycle</span>
-    <span><span class="sw" style="border-color:var(--muted);border-style:dotted"></span>external system</span>
+    <span><span class="sw" style="border-color:var(--muted);border-style:dotted"></span>external</span>
     ${EDGE_KINDS.map((e) => `<button class="tog" data-kind="${e.k}" aria-pressed="${on.has(e.k)}" title="${e.label} lines: on shows them always, off shows them only for the hovered box">${line(e.dash, e.color, e.end)}${e.label}</button>`).join('')}
 `;
   for (const b of $('legend').querySelectorAll('.tog')) b.addEventListener('click', () => {

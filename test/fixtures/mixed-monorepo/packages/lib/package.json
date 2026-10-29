@@ -1,0 +1,7 @@
+{
+  "name": "@acme/lib",
+  "type": "module",
+  "main": "index.js",
+  "bin": { "acme": "bin/cli.js" },
+  "exports": { ".": { "browser": "./browser.js", "default": "./index.js" } }
+}

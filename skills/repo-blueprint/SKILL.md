@@ -1,11 +1,11 @@
 ---
 name: repo-blueprint
-description: Generate a blueprint of a code repository, a zoomable, dependency-layered architecture map built by static analysis (TypeScript and Python). Use when the user asks for a blueprint, architecture map, dependency map, codebase diagram or overview of how a repo fits together, or wants to watch that map update live while they code.
+description: Generate a blueprint of a code repository, a zoomable, dependency-layered architecture map built by static analysis (TypeScript, JavaScript and Python). Use when the user asks for a blueprint, architecture map, dependency map, codebase diagram or overview of how a repo fits together, or wants to watch that map update live while they code.
 ---
 
 # repo-blueprint
 
-Builds a single standalone HTML page that maps a repository: packages, folders and files stacked in dependency tiers, with imports, RPC calls, HTTP calls, events and external systems drawn between them, plus deterministic findings (import cycles, misplaced packages, unused files). Everything comes from static analysis, so the same commit always gives the same page.
+Builds a single standalone HTML page that maps a repository: packages, folders and files stacked in dependency tiers, with imports, RPC calls, HTTP calls, events and every third-party dependency drawn between them, plus deterministic findings (import cycles, misplaced packages, unused files, and any file or import the analysis could not map). Everything comes from static analysis, so the same commit always gives the same page.
 
 ## Commands
 
@@ -14,13 +14,13 @@ The skill runs the `repo-blueprint` npm package, pinned to the version it was wr
 One-time build, writes the HTML and prints its path plus a summary:
 
 ```bash
-npx -y repo-blueprint@0.1.3 build <repo> --open
+npx -y repo-blueprint@0.2.0 build <repo> --open
 ```
 
 Live mode, serves the page and rebuilds it when source files change (run it in the background; it keeps running until stopped):
 
 ```bash
-npx -y repo-blueprint@0.1.3 watch <repo> --open
+npx -y repo-blueprint@0.2.0 watch <repo> --open
 ```
 
 Keep the pinned version as written, even if a newer one exists: the same commit and the same version always produce the same page, so users can compare blueprints over time.
@@ -34,22 +34,22 @@ Keep the pinned version as written, even if a newer one exists: the same commit 
 
 1. Use the repo the user names, otherwise the current working directory.
 2. If they want to keep it open while they work, use `watch` in the background and give them the URL it prints. Otherwise use `build --open`.
-3. Relay the two summary lines the build prints (packages by role, findings by category) and the output path or URL. Don't describe the page at length; the user can press **?** inside it for help.
+3. Relay the summary lines the build prints (packages by role, coverage, findings by category) and the output path or URL. If the coverage line says files were skipped, say how many; the page lists them with the reason. Don't describe the page at length; the user can press **?** inside it for help.
 4. If `node` is missing, tell the user the skill needs Node.js 18.17 or newer. If the build fails, show the error. Python packages are skipped with a notice when neither Python 3.10+ nor `uv` is available; say so if it happens.
 
 ## Supported repos
 
-- **TypeScript and JavaScript:** any folder with a `package.json` and a `tsconfig.json`, at any depth. Imports are resolved with the project's own tsconfig paths.
-- **Python:** any folder with a `pyproject.toml`.
+- **TypeScript and JavaScript:** any folder with a `package.json`, at any depth, ES modules or CommonJS. Imports are resolved with the package's `tsconfig.json` or `jsconfig.json` when it has one. Vue, Svelte and Astro files are reported as not mapped.
+- **Python:** any folder with a `pyproject.toml`, flat or `src/` layout.
 - **Roles:** a declared type wins (Backstage `catalog-info.yaml` `spec.type`, Nx `project.json` `projectType`). Otherwise roles come from the code: an entry file that mounts a UI makes an app, one that starts a server or worker (or a Dockerfile or start script) makes a service, and anything else is a library.
 
 ## Per-repo settings
 
 The package ships defaults. A repo can extend or override them with a `.blueprint.json` at its root, using the same keys:
 
-- `externalSystems`: maps a system name to the npm or Python packages that indicate it, for example `{ "Stripe": ["stripe"] }`.
+- `externalSystems`: maps a system name to the npm or Python packages that indicate it, for example `{ "Billing API": ["@acme/billing-client"] }`. It only renames: every imported package is on the map without it.
 - `messaging`: method and property names for RPC calls, publishes and subscriptions, for repos whose message-bus wrapper uses different names.
 - `folderRoles`: folder names that imply a role, used only for the role-mismatch finding.
 - `sdkDirs`: folder names whose subfolders are generated API clients named after the services they call.
 
-Only suggest a `.blueprint.json` when something the user cares about is missing from the map, such as an external system or message links.
+Only suggest a `.blueprint.json` when the user wants packages grouped under a system name, or message links are missing from the map.

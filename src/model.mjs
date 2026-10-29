@@ -1,16 +1,19 @@
 const glob = (pats) => new RegExp('(^|/)(' + pats.map((p) => p.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\/$/, '/.*')).join('|') + ')$');
 
-export function buildModel(repoName, facts, config) {
+// coverage: one { total, analyzed, skipped: [{ pkg, file, reason }] } per extractor that ran.
+export function buildModel(repoName, facts, config, coverages = []) {
+  const parts = coverages.filter(Boolean);
+  const coverage = parts.length ? { total: parts.reduce((n, c) => n + c.total, 0), analyzed: parts.reduce((n, c) => n + c.analyzed, 0), skipped: parts.flatMap((c) => c.skipped) } : null;
   const EXTERNAL_SYSTEMS = config.externalSystems;
   const SYSTEM_OF = Object.fromEntries(Object.entries(EXTERNAL_SYSTEMS).flatMap(([sys, pkgs]) => pkgs.map((p) => [p, sys])));
   const FOLDER_ROLE = config.folderRoles;
   const CONVENTIONAL_ENTRY_RE = glob(config.conventionalEntries);
   const FRAMEWORK_LOADED_RE = glob(config.frameworkLoaded);
   const SDK_RE = new RegExp(`/(${config.sdkDirs.join('|')})/([^/]+)/`);
-  return buildModelWith({ repoName, facts, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_ROLE, CONVENTIONAL_ENTRY_RE, FRAMEWORK_LOADED_RE, SDK_RE });
+  return buildModelWith({ repoName, facts, coverage, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_ROLE, CONVENTIONAL_ENTRY_RE, FRAMEWORK_LOADED_RE, SDK_RE });
 }
 
-function buildModelWith({ repoName, facts, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_ROLE, CONVENTIONAL_ENTRY_RE, FRAMEWORK_LOADED_RE, SDK_RE }) {
+function buildModelWith({ repoName, facts, coverage, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_ROLE, CONVENTIONAL_ENTRY_RE, FRAMEWORK_LOADED_RE, SDK_RE }) {
   const wsList = [...facts].sort((a, b) => a.id.localeCompare(b.id));
   const packages = {};
   const nodes = {};
@@ -38,7 +41,7 @@ function buildModelWith({ repoName, facts, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_R
   for (const [file, f] of Object.entries(files)) {
     for (const d of f.decls) {
       const k = `${f.pkg}::${d.name}`;
-      if (!exportIndex[k] || /index\.tsx?$/.test(exportIndex[k])) exportIndex[k] = file;
+      if (!exportIndex[k] || /index\.[mc]?[jt]sx?$/.test(exportIndex[k])) exportIndex[k] = file;
     }
   }
 
@@ -139,8 +142,7 @@ function buildModelWith({ repoName, facts, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_R
   const thirdParty = {};
   for (const [file, f] of Object.entries(files)) {
     for (const ext of f.externals) {
-      const sys = SYSTEM_OF[ext];
-      if (sys) addEdge(file, `ext:${sys}`, 'ext', ext);
+      addEdge(file, `ext:${SYSTEM_OF[ext] || ext}`, 'ext', ext);
       for (const k of chainOf(file)) {
         const t = (thirdParty[k] ||= {});
         t[ext] = (t[ext] || 0) + 1;
@@ -193,7 +195,7 @@ function buildModelWith({ repoName, facts, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_R
     if (p.role !== 'library') {
       const importers = [...new Set(PE.filter((e) => e.to === p.id && e.kind === 'import').map((e) => e.from))].sort();
       if (importers.length) findings.push({ type: 'runnable-imported', severity: 'design', pkg: p.id, title: `${p.id} is a ${p.role} but ${importers.join(', ')} import${importers.length > 1 ? '' : 's'} its code`, detail: 'Runnable packages imported as libraries couple deploys together.' });
-    } else if (!PE.some((e) => e.to === p.id)) {
+    } else if (Object.keys(packages).length > 1 && !PE.some((e) => e.to === p.id)) {
       findings.push({ type: 'unused-library', severity: 'check', pkg: p.id, title: `${p.id} is a library nothing else uses`, detail: 'No entry point and no other package imports it.' });
     }
   }
@@ -209,9 +211,26 @@ function buildModelWith({ repoName, facts, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_R
   for (const c of unmatched.calls) findings.push({ type: 'rpc-no-server', severity: 'check', pkg: c.pkg, title: `RPC "${c.subject}" has no server in the repo`, detail: `Called from ${c.file}.` });
   for (const p of unmatched.pubs) findings.push({ type: 'event-no-subscriber', severity: 'check', pkg: p.pkg, title: `Event "${p.subject}" has no subscriber in the repo`, detail: `Published from ${p.file}.` });
   for (const s of unmatched.subs) findings.push({ type: 'subscription-no-publisher', severity: 'check', pkg: s.pkg, title: `"${s.subject}" is subscribed but never published in the repo`, detail: `Handled in ${s.file}.${dyn}` });
+  for (const w of wsList) {
+    for (const [file, info] of Object.entries(w.files).sort()) {
+      for (const spec of info.unresolved || []) findings.push({ type: 'unresolved-import', severity: 'check', pkg: w.id, title: `${file} imports ${spec}, which does not resolve to a file`, detail: 'The import is missing from the map. The file may be missing, generated at build time, or reached through an alias the analysis does not know.', files: [file] });
+      for (const expr of info.dynamic || []) findings.push({ type: 'dynamic-import', severity: 'check', pkg: w.id, title: `${file} imports a module named at runtime: ${expr}`, detail: 'Static analysis cannot tell which module this loads, so the import is missing from the map.', files: [file] });
+    }
+  }
+  const skippedBy = new Map();
+  for (const x of coverage ? coverage.skipped : []) {
+    const k = `${x.pkg || ''}|${x.reason}`;
+    if (!skippedBy.has(k)) skippedBy.set(k, { pkg: x.pkg, reason: x.reason, files: [] });
+    skippedBy.get(k).files.push(x.file);
+  }
+  for (const g of skippedBy.values()) {
+    const n = `${g.files.length} file${g.files.length > 1 ? 's' : ''}`;
+    findings.push({ type: 'skipped-files', severity: 'check', pkg: g.pkg || undefined, title: g.pkg ? `${n} in ${g.pkg} ${g.reason}` : `${n} ${g.reason}`, detail: 'These files are not on the map.', files: g.files.sort() });
+  }
+  const published = new Set(Object.values(packages).flatMap((p) => p.meta.published || []));
   const orphans = {};
   for (const [file, f] of Object.entries(files)) {
-    if (importedFiles.has(file) || CONVENTIONAL_ENTRY_RE.test(file) || FRAMEWORK_LOADED_RE.test(file) || f.boot.length || f.mount.length) continue;
+    if (importedFiles.has(file) || published.has(file) || CONVENTIONAL_ENTRY_RE.test(file) || FRAMEWORK_LOADED_RE.test(file) || f.boot.length || f.mount.length) continue;
     (orphans[f.pkg] ||= []).push(file);
   }
   for (const [pkg, list] of Object.entries(orphans).sort()) findings.push({ type: 'orphan-files', severity: 'check', pkg, title: `${list.length} file${list.length > 1 ? 's' : ''} in ${pkg} never imported`, detail: 'Not imported by any other file and not an entry point.', files: list.sort() });
@@ -232,6 +251,7 @@ function buildModelWith({ repoName, facts, EXTERNAL_SYSTEMS, SYSTEM_OF, FOLDER_R
     thirdParty: thirdPartyOut,
     fineEdges: FE,
     findings,
+    coverage: coverage ? { total: coverage.total, analyzed: coverage.analyzed, skipped: coverage.skipped.length } : null,
     mq: { calls: mq.call.length, serves: mq.serve.length, pubs: mq.pub.length, subs: mq.sub.length, dynamic: mq.dynamic },
   };
 }
@@ -244,7 +264,7 @@ function runtimeOf(p, used) {
   const ui = [['react', 'React'], ['react-dom', 'React'], ['vue', 'Vue'], ['@angular/core', 'Angular'], ['svelte', 'Svelte'], ['solid-js', 'Solid']];
   const server = [['@nestjs/core', 'NestJS'], ['@nestjs/common', 'NestJS'], ['express', 'Express'], ['fastify', 'Fastify'], ['hono', 'Hono'], ['@temporalio/worker', 'Temporal'], ['koa', 'Koa']];
   for (const [mod, name] of p.role === 'app' ? [...ui, ...server] : [...server, ...ui]) if (used[mod]) return name;
-  return 'TypeScript';
+  return p.lang === 'javascript' ? 'JavaScript' : 'TypeScript';
 }
 
 function sdkTarget(name, packages, self) {

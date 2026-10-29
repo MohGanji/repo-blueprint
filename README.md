@@ -5,8 +5,9 @@ A clearer way to see how a repository is built. repo-blueprint maps a codebase i
 ![TanStack Query mapped with repo-blueprint](https://raw.githubusercontent.com/MohGanji/repo-blueprint/main/media/demo.gif)
 
 - Works with TypeScript, JavaScript and Python, monorepos included
-- Draws imports, RPC and HTTP calls, events, and external systems such as databases and queues
+- Draws imports, RPC and HTTP calls, events, and every third-party package the code imports, named by system (PostgreSQL, Stripe…) when it is a known driver or SDK
 - Flags import cycles, unused packages and orphan files
+- Reports every file it could not map, and every import it could not follow, so nothing drops off the map silently
 - Produces one self-contained HTML file
 - Uses static analysis only, so the output is deterministic
 
@@ -36,8 +37,8 @@ Serves the map on localhost and rebuilds it when files change.
 
 ## Supported projects
 
-- **TypeScript and JavaScript:** any folder with a `package.json` and a `tsconfig.json`, at any depth. Imports are resolved through the project's tsconfig paths.
-- **Python:** any folder with a `pyproject.toml`.
+- **TypeScript and JavaScript:** any folder with a `package.json`, at any depth. ES modules and CommonJS (`require`, `module.exports`) are both read. Imports are resolved through the package's `tsconfig.json` or `jsconfig.json` when it has one. Vue, Svelte and Astro files are not parsed yet and are reported as not mapped.
+- **Python:** any folder with a `pyproject.toml`, flat or `src/` layout.
 
 Each package is shown as an app, a service or a library. A declared type is used when there is one (Backstage `catalog-info.yaml`, Nx `project.json`). Otherwise the role is inferred: an entry file that mounts a UI makes an app, one that starts a server or worker makes a service, and anything else is a library.
 
@@ -53,20 +54,24 @@ You can also copy [`SKILL.md`](https://github.com/MohGanji/repo-blueprint/blob/m
 
 ## Configuration
 
-Put a `.blueprint.json` in the root of the repo being mapped to extend the [defaults](https://github.com/MohGanji/repo-blueprint/blob/main/src/blueprint.config.json). For example, to detect an extra external system:
+None is needed: every imported package is on the map without it. Put a `.blueprint.json` in the root of the repo being mapped to extend the [defaults](https://github.com/MohGanji/repo-blueprint/blob/main/src/blueprint.config.json). For example, to group your own SDKs under one system name:
 
 ```json
 {
-  "externalSystems": { "Stripe": ["stripe"] }
+  "externalSystems": { "Billing API": ["@acme/billing-client"] }
 }
 ```
 
 | Key | Description |
 | --- | --- |
-| `externalSystems` | System names and the packages that indicate them |
+| `externalSystems` | System names and the packages that indicate them. Labels only: a package not listed still appears under its own name |
 | `messaging` | Method and property names for RPC calls, publishes and subscriptions |
 | `folderRoles` | Folder names that imply a role, used by the role-mismatch finding |
 | `sdkDirs` | Folders whose subfolders are generated API clients, named after the services they call |
+
+## Examples
+
+[`examples/`](https://github.com/MohGanji/repo-blueprint/tree/main/examples) holds blueprints of open-source projects, each pinned to a commit in [`corpus.json`](https://github.com/MohGanji/repo-blueprint/blob/main/examples/corpus.json): Express, Koa, debug, Chalk, nanoid, Ky, Zustand and Zod from npm, and Requests, Click, HTTPX, Flask and Rich from PyPI. Download one and open it in a browser. `node examples/build-examples.mjs` rebuilds them.
 
 ## How it works
 
@@ -75,13 +80,15 @@ The TypeScript compiler API and Python's `ast` module extract facts from the sou
 ```
 bin/repo-blueprint.mjs     CLI
 src/
-├── extract-ts.mjs         TypeScript extractor
+├── extract-ts.mjs         TypeScript and JavaScript extractor
 ├── extract-py.py          Python extractor
 ├── model.mjs              packages, edges, roles, findings
 ├── views.mjs              one diagram per folder
 ├── build.mjs              writes the HTML
 └── template.html          the page
 skills/repo-blueprint/     agent skill
+test/                      fixture repos and tests (npm test)
+examples/                  blueprints of open-source repos
 ```
 
 ## Contributing

@@ -13,8 +13,10 @@ const OUT = path.resolve(process.argv[3]);
 const FACTS = path.resolve(process.argv[4]);
 const name = path.basename(REPO);
 
-const read = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')).workspaces : []);
-const model = buildModel(name, [...read(path.join(FACTS, `${name}-ts.json`)), ...read(path.join(FACTS, `${name}-py.json`))], loadConfig(REPO));
+const read = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : { workspaces: [] });
+const tsFacts = read(path.join(FACTS, `${name}-ts.json`));
+const pyFacts = read(path.join(FACTS, `${name}-py.json`));
+const model = buildModel(name, [...tsFacts.workspaces, ...pyFacts.workspaces], loadConfig(REPO), [tsFacts.coverage, pyFacts.coverage]);
 const t0 = Date.now();
 const views = buildViews(model);
 
@@ -69,4 +71,5 @@ const byType = {};
 for (const f of model.findings) byType[f.type] = (byType[f.type] || 0) + 1;
 const nFiles = Object.keys(model.files).length;
 console.log(`${name}${commit ? ` (${branch}@${commit})` : ''}: ${Object.keys(model.packages).length} packages (${Object.entries(roles).map(([r, n]) => `${n} ${r}`).join(', ')}), ${nFiles} files, ${Object.keys(views).length} views`);
+if (model.coverage) console.log(`coverage: ${model.coverage.analyzed} of ${model.coverage.total} source files mapped${model.coverage.skipped ? `, ${model.coverage.skipped} skipped (see findings)` : ''}`);
 console.log(`findings: ${model.findings.length ? Object.entries(byType).map(([t, n]) => `${t} ${n}`).join(', ') : 'none'}`);

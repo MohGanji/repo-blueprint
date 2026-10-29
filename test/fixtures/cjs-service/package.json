@@ -1,0 +1,5 @@
+{
+  "name": "cjs-service",
+  "scripts": { "start": "node index.js" },
+  "dependencies": { "express": "4.19.2", "better-sqlite3": "9.4.0", "drizzle-orm": "0.30.0" }
+}

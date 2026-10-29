@@ -62,19 +62,35 @@ def enums_of(tree):
     return out
 
 
+def py_files(d, nested=()):
+    out = []
+    for root, dirs, fs in os.walk(d):
+        dirs[:] = sorted(x for x in dirs if not x.startswith(".") and x not in SKIP and os.path.join(root, x) not in nested)
+        out += [os.path.join(root, f) for f in sorted(fs) if f.endswith(".py")]
+    return out
+
+
+def parse(p, skipped, wid):
+    try:
+        return ast.parse(open(p, encoding="utf-8").read(), filename=p)
+    except (SyntaxError, UnicodeDecodeError, ValueError) as e:
+        why = f"invalid syntax on line {e.lineno}" if isinstance(e, SyntaxError) else "not valid UTF-8 text" if isinstance(e, UnicodeDecodeError) else str(e)
+        skipped.append({"pkg": wid, "file": rel(p), "reason": f"could not be parsed: {why}"})
+        return None
+
+
 def main():
     result = []
+    skipped = []
     packages = discover()
+    # Every .py file (tests excluded) is either analysed or listed in skipped with the reason.
+    for p in py_files(REPO):
+        if not TEST_RE.search(rel(p)) and not any(p.startswith(d + os.sep) for _, d in packages):
+            skipped.append({"pkg": None, "file": rel(p), "reason": "outside any package: no pyproject.toml above it"})
     for wid, wdir in packages:
         nested = [d for _, d in packages if d != wdir and d.startswith(wdir + os.sep)]
-        paths = []
-        for root, dirs, fs in os.walk(wdir):
-            dirs[:] = sorted(d for d in dirs if not d.startswith(".") and d not in SKIP and os.path.join(root, d) not in nested)
-            for f in sorted(fs):
-                p = os.path.join(root, f)
-                if f.endswith(".py") and not TEST_RE.search(rel(p)[len(rel(wdir)) + 1 :]):
-                    paths.append(p)
-        trees = {p: ast.parse(open(p, encoding="utf-8").read(), filename=p) for p in paths}
+        paths = [p for p in py_files(wdir, nested) if not TEST_RE.search(rel(p)[len(rel(wdir)) + 1 :])]
+        trees = {p: t for p in paths if (t := parse(p, skipped, wid)) is not None}
         enums = {}
         for t in trees.values():
             enums.update(enums_of(t))
@@ -92,12 +108,14 @@ def main():
                 for _ in range(level - 1):
                     base = os.path.dirname(base)
                 parts = mod.split(".") if mod else []
-                cand = os.path.join(base, *parts)
+                cands = [os.path.join(base, *parts)]
             else:
-                cand = os.path.join(wdir, *mod.split("."))
-            for c in (cand + ".py", os.path.join(cand, "__init__.py")):
-                if c in trees:
-                    return rel(c)
+                # Absolute imports resolve from the package root, or from src/ in a src layout.
+                cands = [os.path.join(wdir, *mod.split(".")), os.path.join(wdir, "src", *mod.split("."))]
+            for cand in cands:
+                for c in (cand + ".py", os.path.join(cand, "__init__.py")):
+                    if c in trees:
+                        return rel(c)
             return None
 
         files = {}
@@ -159,7 +177,8 @@ def main():
             continue
         result.append({"id": wid, "dir": rel(wdir) if wdir != REPO else ".", "parent": os.path.basename(os.path.dirname(wdir)) if wdir != REPO else "", "aliases": [], "files": files, "mq": mq, "lang": "python", "meta": meta})
         sys.stdout.write(f"{wid}: {len(files)} files, {len(mq)} mq facts\n")
-    json.dump({"workspaces": result}, open(OUT, "w"))
+    analyzed = sum(len(w["files"]) for w in result)
+    json.dump({"workspaces": result, "coverage": {"total": analyzed + len(skipped), "analyzed": analyzed, "skipped": skipped}}, open(OUT, "w"))
 
 
 main()
