@@ -14,13 +14,13 @@ The skill runs the `repo-blueprint` npm package, pinned to the version it was wr
 One-time build, writes the HTML and prints its path plus a summary:
 
 ```bash
-npx -y repo-blueprint@0.1.1 build <repo> --open
+npx -y repo-blueprint@0.1.2 build <repo> --open
 ```
 
 Live mode, serves the page and rebuilds it when source files change (run it in the background; it keeps running until stopped):
 
 ```bash
-npx -y repo-blueprint@0.1.1 watch <repo> --open
+npx -y repo-blueprint@0.1.2 watch <repo> --open
 ```
 
 Keep the pinned version as written, even if a newer one exists: the same commit and the same version always produce the same page, so users can compare blueprints over time.

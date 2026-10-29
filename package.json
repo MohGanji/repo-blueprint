@@ -1,6 +1,6 @@
 {
   "name": "repo-blueprint",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Generate a zoomable, dependency-layered map of a code repository by static analysis.",
   "author": "Mo Ganji <mo@ganji.me>",
   "license": "MIT",
