@@ -1,18 +1,21 @@
 // Records the README demo: a scripted walk through a blueprint page.
-// Needs playwright (npm i playwright). Usage: node record-demo.mjs <url> <videoDir>
-// See CONTRIBUTING.md for turning the video into media/demo.gif.
+// Needs playwright (npm i playwright). Usage: node media/record-demo.mjs <url> <outDir>
+// Set SCHEME=light for the light-mode version. Writes lossless frames plus <outDir>/frames.txt;
+// see CONTRIBUTING.md for turning them into media/demo.gif.
 import { chromium } from 'playwright';
 
 const [url, outDir] = process.argv.slice(2);
 const W = 1440, H = 900;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: 'chromium' });
 const ctx = await browser.newContext({
   viewport: { width: W, height: H },
-  deviceScaleFactor: 1,
-  colorScheme: 'dark',
-  recordVideo: { dir: outDir, size: { width: W, height: H } },
+  deviceScaleFactor: 2,
+  colorScheme: process.env.SCHEME || 'dark',
 });
+import fs from 'node:fs';
+fs.mkdirSync(outDir + '/frames', { recursive: true });
+const frames = [];
 
 // Fake cursor, since recorded video has no pointer.
 await ctx.addInitScript(() => {
@@ -33,6 +36,15 @@ await ctx.addInitScript(() => {
 });
 
 const page = await ctx.newPage();
+const cdp = await ctx.newCDPSession(page);
+let n = 0;
+cdp.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
+  const f = `${outDir}/frames/${String(n++).padStart(5, '0')}.png`;
+  fs.writeFileSync(f, Buffer.from(data, 'base64'));
+  frames.push({ f, t: metadata.timestamp });
+  cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {});
+});
+async function startCapture() { await cdp.send('Page.startScreencast', { format: 'png', maxWidth: W * 2, maxHeight: H * 2, everyNthFrame: 1 }); }
 const wait = (ms) => page.waitForTimeout(ms);
 let pos = { x: W / 2, y: H / 2 };
 async function moveTo(x, y, steps = 30) { await page.mouse.move(x, y, { steps }); pos = { x, y }; }
@@ -62,6 +74,7 @@ async function click(label, ms = 1600) { const p = await nodeAt(label); await mo
 
 await page.goto(url);
 await page.waitForSelector('#stage .pele-node');
+await startCapture();
 await wait(500);
 await page.click('#zfit');
 await page.mouse.move(W * 0.62, H * 0.55);
@@ -90,7 +103,15 @@ await page.mouse.click(qb.x + 60, qb.y + qb.height / 2);
 await q.pressSequentially('QueryCache', { delay: 90 });
 await wait(1300);
 await page.keyboard.press('Enter');
-await wait(2400);
+await wait(1900);
+
+// 4b. Zoom out to the whole import cycle queryCache.ts belongs to.
+await moveTo(W * 0.86, H * 0.78, 25); // park over the side panel so no box is hovered
+await page.locator('#stage').focus();
+await page.keyboard.press('Escape'); // clear the selection so every line in the cycle shows
+await page.evaluate(() => document.activeElement.blur());
+await page.evaluate(() => fitTo(svgBox(state.layer, state.layer.querySelector('.pele-cluster[data-id^="C"] rect'))));
+await wait(2800);
 
 // 5. Back out to the whole repo via the breadcrumb.
 const root = page.locator('#crumbs button').first();
@@ -103,7 +124,15 @@ await wait(900);
 await moveTo(W * 0.6, H * 0.5, 25);
 await wait(2000);
 
-const video = page.video();
-await ctx.close();
-console.log(await video.path());
+await cdp.send('Page.stopScreencast');
+await wait(300);
+// ffmpeg concat list: each frame shown until the next one arrived
+const lines = [];
+for (let i = 0; i < frames.length; i++) {
+  const d = i + 1 < frames.length ? frames[i + 1].t - frames[i].t : 0.5;
+  lines.push(`file '${frames[i].f}'`, `duration ${d.toFixed(4)}`);
+}
+lines.push(`file '${frames[frames.length - 1].f}'`);
+fs.writeFileSync(outDir + '/frames.txt', lines.join('\n') + '\n');
+console.log(frames.length + ' frames, ' + (frames.at(-1).t - frames[0].t).toFixed(1) + 's');
 await browser.close();

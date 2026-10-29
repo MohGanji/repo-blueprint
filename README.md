@@ -2,7 +2,7 @@
 
 A clearer way to see how a repository is built. repo-blueprint maps a codebase into layers, with each part placed above its dependencies. Detail is handled by zoom: the top level shows packages, and zooming in reveals folders, then files.
 
-![TanStack Query mapped with repo-blueprint](https://raw.githubusercontent.com/MohGanji/repo-blueprint/v0.1.2/media/demo.gif)
+![TanStack Query mapped with repo-blueprint](https://raw.githubusercontent.com/MohGanji/repo-blueprint/main/media/demo.gif)
 
 - Works with TypeScript, JavaScript and Python, monorepos included
 - Draws imports, RPC and HTTP calls, events, and external systems such as databases and queues
