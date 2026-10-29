@@ -1,0 +1,43 @@
+{
+  "name": "repo-blueprint",
+  "version": "0.1.0",
+  "description": "Generate a zoomable, dependency-layered map of a code repository by static analysis.",
+  "author": "Mo Ganji <mo@ganji.me>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MohGanji/repo-blueprint.git"
+  },
+  "homepage": "https://github.com/MohGanji/repo-blueprint#readme",
+  "bugs": {
+    "url": "https://github.com/MohGanji/repo-blueprint/issues"
+  },
+  "type": "module",
+  "bin": {
+    "repo-blueprint": "bin/repo-blueprint.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    ".claude-plugin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "pele": "1.12.0",
+    "typescript": "5.6.3"
+  },
+  "keywords": [
+    "architecture",
+    "dependency-graph",
+    "static-analysis",
+    "diagram",
+    "typescript",
+    "claude-code",
+    "skill"
+  ]
+}

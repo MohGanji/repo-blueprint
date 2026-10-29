@@ -1,0 +1,196 @@
+{
+  "folderRoles": {
+    "apps": "app",
+    "app": "app",
+    "clients": "app",
+    "services": "service",
+    "service": "service",
+    "servers": "service",
+    "packages": "library",
+    "libs": "library",
+    "lib": "library",
+    "shared": "library"
+  },
+  "sdkDirs": [
+    "sdk",
+    "client",
+    "clients",
+    "api-client"
+  ],
+  "conventionalEntries": [
+    "main.ts",
+    "main.tsx",
+    "index.ts",
+    "index.tsx",
+    "server.ts",
+    "worker.ts",
+    "app.module.ts",
+    "main.py",
+    "__main__.py",
+    "__init__.py",
+    "*.config.ts"
+  ],
+  "frameworkLoaded": [
+    "*.entity.ts",
+    "*.migration.ts",
+    "*.seed.ts",
+    "*.workflow.ts",
+    "migrations/",
+    "scripts/",
+    "script/",
+    "seeds/"
+  ],
+  "messaging": {
+    "publishMethods": [
+      "broadcast",
+      "publish"
+    ],
+    "publishToMethods": [
+      "broadcastTo"
+    ],
+    "rpcSendMethods": [
+      "send"
+    ],
+    "rpcSubjectProperty": "subject",
+    "subscribeMethods": [
+      "register",
+      "registerHandler",
+      "subscribe",
+      "on",
+      "addHandler"
+    ],
+    "routingKeyProperties": [
+      "routingKey",
+      "routingKeys"
+    ],
+    "handlerRegistrations": [
+      "MqModule.register",
+      "MqModule.forRoot"
+    ]
+  },
+  "externalSystems": {
+    "PostgreSQL": [
+      "typeorm",
+      "@nestjs/typeorm",
+      "pg",
+      "sqlalchemy",
+      "knex",
+      "postgres",
+      "@prisma/client",
+      "drizzle-orm",
+      "pg-boss"
+    ],
+    "MySQL": [
+      "mysql",
+      "mysql2"
+    ],
+    "MongoDB": [
+      "mongodb",
+      "mongoose"
+    ],
+    "RabbitMQ": [
+      "rabbitmq-client",
+      "aio_pika",
+      "amqplib",
+      "amqp-connection-manager"
+    ],
+    "Redis": [
+      "ioredis",
+      "@keyv/redis",
+      "redis",
+      "bullmq",
+      "bull",
+      "@nestjs/bullmq",
+      "@nestjs/bull"
+    ],
+    "Temporal": [
+      "@temporalio/worker",
+      "@temporalio/client",
+      "@temporalio/workflow",
+      "@temporalio/activity"
+    ],
+    "Firebase": [
+      "firebase",
+      "firebase-admin",
+      "firebase-functions",
+      "@google-cloud/firestore"
+    ],
+    "Object storage": [
+      "minio",
+      "@google-cloud/storage",
+      "google.cloud",
+      "@aws-sdk/client-s3",
+      "aws-sdk"
+    ],
+    "Google Pub/Sub": [
+      "@google-cloud/pubsub"
+    ],
+    "Permit.io": [
+      "permitio",
+      "permit-fe-sdk"
+    ],
+    "Ory": [
+      "@ory/client-fetch",
+      "@ory/client"
+    ],
+    "OIDC provider": [
+      "openid-client",
+      "jwks-rsa"
+    ],
+    "Novu": [
+      "@novu/js",
+      "@novu/framework",
+      "@novu/api"
+    ],
+    "Mailgun": [
+      "mailgun.js"
+    ],
+    "SendGrid": [
+      "@sendgrid/mail"
+    ],
+    "Nodemailer": [
+      "nodemailer"
+    ],
+    "OpenAI": [
+      "openai",
+      "@openai/agents",
+      "@openai/agents-realtime"
+    ],
+    "Anthropic": [
+      "@anthropic-ai/sdk"
+    ],
+    "Google Gemini": [
+      "google.genai",
+      "@google/genai",
+      "@google/generative-ai"
+    ],
+    "Kafka": [
+      "@platformatic/kafka",
+      "kafkajs"
+    ],
+    "New Relic": [
+      "newrelic",
+      "@newrelic/browser-agent"
+    ],
+    "Sentry": [
+      "@sentry/node",
+      "@sentry/react",
+      "@sentry/browser"
+    ],
+    "Metabase": [
+      "@metabase/embedding-sdk-react"
+    ],
+    "Usersnap": [
+      "@usersnap/browser"
+    ],
+    "Slack": [
+      "@slack/web-api",
+      "@slack/bolt"
+    ],
+    "Browser automation": [
+      "playwright",
+      "puppeteer",
+      "@playwright/test"
+    ]
+  }
+}
