@@ -37,7 +37,7 @@ node examples/build-examples.mjs          # all of them
 node examples/build-examples.mjs express  # one
 ```
 
-Commit the rebuilt pages with the change, so the diff shows what it did to real maps. The script also rewrites `examples/index.html`, the gallery that GitHub Pages serves from `examples/` on every push to `main`. To add a project, add it to `corpus.json` with its commit, language and a one-line description, then run the script for it.
+Commit the rebuilt pages with the change, so the diff shows what it did to real maps. The script also rewrites `examples/index.html`, the gallery that GitHub Pages serves from `examples/` on every push to `main`. To add a project, add it to `corpus.json` with its commit and a one-line description, then run the script for it. The gallery lists projects in `corpus.json` order.
 
 ## Releasing
 

@@ -13,9 +13,7 @@ A clearer way to see how a repository is built. repo-blueprint maps a codebase i
 
 ## Examples
 
-**[Explore the example gallery →](https://mohganji.github.io/repo-blueprint/)**
-
-Blueprints of 20 open-source projects, open in your browser: Express, Zod and Zustand from npm, Pydantic, FastAPI, LiteLLM and Karpathy's nanochat from Python, and more. Each one is pinned to a commit in [`corpus.json`](https://github.com/MohGanji/repo-blueprint/blob/main/examples/corpus.json), and `node examples/build-examples.mjs` rebuilds them.
+Check out example blueprints of open-source GitHub repos, such as [Pydantic](https://mohganji.github.io/repo-blueprint/pydantic.blueprint.html), [Zod](https://mohganji.github.io/repo-blueprint/zod.blueprint.html), [Flask](https://mohganji.github.io/repo-blueprint/flask.blueprint.html) and [Express](https://mohganji.github.io/repo-blueprint/express.blueprint.html), in the **[gallery](https://mohganji.github.io/repo-blueprint/)**.
 
 ## Usage
 
