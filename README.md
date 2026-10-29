@@ -1,5 +1,7 @@
 # repo-blueprint [![npm](https://img.shields.io/npm/v/repo-blueprint.svg)](https://www.npmjs.com/package/repo-blueprint)
 
+> **Run `npx repo-blueprint build . --open` in your repo to get its blueprint.**
+
 A clearer way to see how a repository is built. repo-blueprint maps a codebase into layers, with each part placed above its dependencies. Detail is handled by zoom: the top level shows packages, and zooming in reveals folders, then files.
 
 ![TanStack Query mapped with repo-blueprint](https://raw.githubusercontent.com/MohGanji/repo-blueprint/main/media/demo.gif)
