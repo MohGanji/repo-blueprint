@@ -1,17 +1,30 @@
 # repo-blueprint
 
-A zoomable, dependency-layered map of a code repository, built by static analysis.
+[![npm](https://img.shields.io/npm/v/repo-blueprint)](https://www.npmjs.com/package/repo-blueprint)
+[![license](https://img.shields.io/npm/l/repo-blueprint)](LICENSE)
+[![node](https://img.shields.io/node/v/repo-blueprint)](package.json)
 
-It reads TypeScript and Python source, resolves every import through the project's own config, and writes one standalone HTML page: packages, folders and files stacked in dependency tiers, with imports, RPC calls, HTTP calls, events and external systems drawn between them, plus findings such as import cycles and unused files. The same commit and the same version always produce the same page.
+**See how a codebase fits together in one command.** repo-blueprint reads your TypeScript and Python source and turns it into a zoomable architecture map, with every package, folder and file stacked by what depends on what.
 
-## With an agent
+![repo-blueprint exploring the TanStack Query monorepo](media/demo.gif)
 
-1. Add the `repo-blueprint` skill from this repo's `skills/` folder, for example with skills.sh, or by pointing your agent at this repo.
-2. Ask for "a blueprint of this repo", or "a live blueprint I can keep open while I work".
+<sub>The 28 packages of the [TanStack Query](https://github.com/TanStack/query) monorepo.</sub>
 
-The skill is a single `SKILL.md`. It runs this package through `npx`, pinned to an exact version.
+```bash
+npx repo-blueprint build --open
+```
 
-## From the command line
+## Why
+
+- **Layers, not spaghetti.** Parts sit in dependency tiers, from entry points at the top down to the base everything builds on. Zoom from the whole repo into a package, a folder, then a single file.
+- **Everything that connects.** Imports, RPC calls, HTTP calls, events and external systems (databases, brokers, vendors) are drawn as lines between parts.
+- **Findings for free.** Import cycles, misplaced packages, unused libraries and orphan files are flagged from fixed rules.
+- **Search anything.** Jump straight to any folder, file, class, route or event.
+- **Deterministic.** Pure static analysis through the TypeScript compiler and Python's own parser. No AI guessing: the same commit and the same version always produce the same page.
+- **One file.** The output is a single standalone HTML page you can open, share or commit.
+- **Live mode.** `watch` keeps the map open in your browser and redraws it as you code.
+
+## Quick start
 
 Requires Node.js 18.17 or newer. Python repos also need Python 3.10+ or [uv](https://docs.astral.sh/uv/).
 
@@ -22,19 +35,34 @@ npx repo-blueprint watch [repo] [--port 4321] [--open]
 
 - `build` writes the page once, to `~/.repo-blueprint/<repo>.blueprint.html` unless `--out` says otherwise, and prints a summary.
 - `watch` serves the page on localhost and rebuilds it whenever source files change.
+- `repo` defaults to the current directory.
 
-From a clone, `node bin/repo-blueprint.mjs build` works too; the first run installs the two dependencies, `typescript` and `pele`.
+## With an agent
+
+repo-blueprint ships as an agent skill, so Claude Code and other agents can draw the map for you.
+
+```bash
+npx skills add MohGanji/repo-blueprint
+```
+
+Or copy [`skills/repo-blueprint/SKILL.md`](skills/repo-blueprint/SKILL.md) into your agent's skills folder. Then ask for "a blueprint of this repo", or "a live blueprint I can keep open while I work". The skill runs this package through `npx`, pinned to an exact version.
+
+## What it understands
+
+- **TypeScript and JavaScript:** any folder with a `package.json` and a `tsconfig.json`, at any depth. Imports are resolved through the project's own tsconfig paths.
+- **Python:** any folder with a `pyproject.toml`.
+- **Roles:** each package is shown as an app, service or library. A declared type wins (Backstage `catalog-info.yaml`, Nx `project.json`). Otherwise the role comes from the code: an entry file that mounts a UI is an app, one that starts a server or worker is a service, and anything else is a library.
 
 ## Per-repo settings
 
-A `.blueprint.json` at the root of the analysed repo extends `src/blueprint.config.json`:
+A `.blueprint.json` at the root of the analysed repo extends the [defaults](src/blueprint.config.json):
 
 - `externalSystems`: system names and the packages that indicate them, for example `{ "Stripe": ["stripe"] }`.
 - `messaging`: method and property names for RPC calls, publishes and subscriptions.
 - `folderRoles`: folder names that imply a role, used for the role-mismatch finding.
 - `sdkDirs`: folder names whose subfolders are generated API clients named after the services they call.
 
-## Layout
+## How it works
 
 ```
 bin/repo-blueprint.mjs        CLI: build and watch
@@ -49,10 +77,10 @@ skills/repo-blueprint/        the agent skill
 .claude-plugin/plugin.json    Claude Code plugin manifest
 ```
 
-## Releasing
+## Contributing
 
-The skill pins the package version, so they move together:
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-1. Bump `version` in `package.json` and `.claude-plugin/plugin.json`.
-2. Update the `repo-blueprint@x.y.z` references in `skills/repo-blueprint/SKILL.md`.
-3. `npm publish`, then commit and tag the release.
+## License
+
+[MIT](LICENSE)
