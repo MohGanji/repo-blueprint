@@ -472,6 +472,13 @@ function frameBox(layer) {
   const c = layer.querySelector('.pele-cluster[data-id="FRAME"] rect');
   return c ? svgBox(layer, c) : null;
 }
+// The dependency tiers of a view, without the external band: where the opening camera aims when there is no frame.
+function levelsBox(layer) {
+  const boxes = [...layer.querySelectorAll('.pele-cluster')].filter((c) => /^L\d+$/.test(c.getAttribute('data-id'))).map((c) => svgBox(layer, c.querySelector('rect') || c));
+  if (!boxes.length) return null;
+  const x = Math.min(...boxes.map((b) => b.x));
+  return { x, w: Math.max(...boxes.map((b) => b.x + b.w)) - x };
+}
 function fitCam(box, pad = 0.92, maxS = 1.5) {
   const W = stage.clientWidth, H = stage.clientHeight;
   const s = Math.min(maxS, Math.min(W / box.w, H / box.h) * pad);
@@ -488,7 +495,7 @@ function homeCam(layer) {
   const readable = W < 600 ? 0.45 : 0.7;
   if (fit.s >= readable) return fit;
   const s = Math.min(1, Math.max(readable, (W / v.width) * 0.96));
-  const fb = frameBox(layer) || { x: 0, w: v.width };
+  const fb = frameBox(layer) || levelsBox(layer) || { x: 0, w: v.width };
   const x = fb.w * s > W - 24 ? 12 - fb.x * s : W / 2 - (fb.x + fb.w / 2) * s;
   return { s, x, y: 12 };
 }

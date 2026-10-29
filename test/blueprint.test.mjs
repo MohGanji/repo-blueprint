@@ -132,3 +132,10 @@ test('the external dependencies a view shows are ordered by how many files use t
   const order = Object.values(root.nodes).map((n) => n.key).filter((k) => k.startsWith('ext:'));
   assert.deepEqual(order, ['ext:express', 'ext:drizzle-orm', 'ext:SQLite']);
 });
+
+test('Python: tests are left out, scripts are mapped, for a package at the repo root too', () => {
+  const m = blueprint('py-flat');
+  assert.deepEqual(Object.keys(m.files).sort(), ['app.py', 'scripts/run.py']);
+  assert.ok(edge(m, 'scripts/run.py', 'app.py'));
+  assert.deepEqual(m.findings.filter((f) => f.type === 'orphan-files'), []);
+});

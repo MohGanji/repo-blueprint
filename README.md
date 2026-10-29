@@ -71,7 +71,7 @@ None is needed: every imported package is on the map without it. Put a `.bluepri
 
 ## Examples
 
-[`examples/`](https://github.com/MohGanji/repo-blueprint/tree/main/examples) holds blueprints of open-source projects, each pinned to a commit in [`corpus.json`](https://github.com/MohGanji/repo-blueprint/blob/main/examples/corpus.json): Express, Koa, debug, Chalk, nanoid, Ky, Zustand and Zod from npm, and Requests, Click, HTTPX, Flask and Rich from PyPI. Download one and open it in a browser. `node examples/build-examples.mjs` rebuilds them.
+[`examples/`](https://github.com/MohGanji/repo-blueprint/tree/main/examples) holds blueprints of open-source projects, each pinned to a commit in [`corpus.json`](https://github.com/MohGanji/repo-blueprint/blob/main/examples/corpus.json): Express, Koa, debug, Chalk, nanoid, Ky, Zustand and Zod from npm, and Requests, Click, HTTPX, Flask, Rich, Pydantic, FastAPI, Typer, SQLModel, Instructor, LiteLLM and Karpathy's nanochat from PyPI and GitHub. Download one and open it in a browser. `node examples/build-examples.mjs` rebuilds them.
 
 ## How it works
 

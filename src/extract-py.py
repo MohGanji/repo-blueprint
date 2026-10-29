@@ -7,7 +7,7 @@ import sys
 REPO = os.path.abspath(sys.argv[1])
 OUT = sys.argv[2]
 SUBJECT_RE = re.compile(r"^[A-Za-z][\w-]*(\.[\w#*-]+)+$")
-TEST_RE = re.compile(r"(^|/)(tests?|migrations|scripts|examples)/|(^|/)(test_|conftest)")
+TEST_RE = re.compile(r"(^|/)tests?/|(^|/)(test_|conftest)|_test\.py$")
 
 
 def ext_name(mod):
@@ -89,7 +89,7 @@ def main():
             skipped.append({"pkg": None, "file": rel(p), "reason": "outside any package: no pyproject.toml above it"})
     for wid, wdir in packages:
         nested = [d for _, d in packages if d != wdir and d.startswith(wdir + os.sep)]
-        paths = [p for p in py_files(wdir, nested) if not TEST_RE.search(rel(p)[len(rel(wdir)) + 1 :])]
+        paths = [p for p in py_files(wdir, nested) if not TEST_RE.search(os.path.relpath(p, wdir).replace(os.sep, "/"))]
         trees = {p: t for p in paths if (t := parse(p, skipped, wid)) is not None}
         enums = {}
         for t in trees.values():
