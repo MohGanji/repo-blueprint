@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>repo-blueprint examples</title>
+<meta name="description" content="Architecture maps of 20 open-source projects, built by static analysis with repo-blueprint.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #e9efee; --surface: #fdfefe; --ink: #14233a; --muted: #576878; --line: #c3cfd2; --accent: #1d6bb0; --amber: #8a5f00;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Barlow", "Segoe UI", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0d141a; --surface: #18232d; --ink: #e2e9ee; --muted: #8fa0ad; --line: #2b3b47; --accent: #66adec; --amber: #e2b34e; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0d141a; --surface: #18232d; --ink: #e2e9ee; --muted: #8fa0ad; --line: #2b3b47; --accent: #66adec; --amber: #e2b34e; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+main { max-width: 1080px; margin: 0 auto; padding: 48px 16px 64px; }
+a { color: var(--accent); }
+.eyebrow { font: 600 14px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font: 700 44px/1.05 var(--display); margin: 6px 0 12px; }
+.lede { max-width: 640px; margin: 0 0 20px; color: var(--muted); font-size: 17px; }
+.try { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 0 0 44px; }
+code { font: 13px var(--mono); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+h2 { font: 600 15px var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+section + section { margin-top: 40px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 6px; transition: border-color 120ms ease; }
+.card:hover { border-color: var(--accent); }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h3 { font: 700 24px/1.1 var(--display); margin: 0; }
+h3 a { color: inherit; text-decoration: none; }
+.open::after { content: ""; position: absolute; inset: 0; border-radius: 10px; }
+.open:focus-visible { outline: none; }
+.card:has(.open:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lang { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.about { margin: 0; flex: 1; }
+.stats { margin: 0; font: 12.5px var(--mono); color: var(--muted); }
+.heavy { color: var(--amber); }
+.src { margin: 0; font: 12.5px var(--mono); }
+.src a { position: relative; z-index: 1; color: var(--muted); }
+.src a:hover { color: var(--accent); }
+footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
+@media (max-width: 520px) { main { padding-top: 32px; } h1 { font-size: 36px; } }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">repo-blueprint 0.2.0</p>
+<h1>Example blueprints</h1>
+<p class="lede">Architecture maps of 20 open-source projects, each built from one pinned commit by static analysis. Open one, zoom from packages down to files, and press <strong>?</strong> on the map for help.</p>
+<div class="try"><code>npx repo-blueprint build .</code><a href="https://github.com/MohGanji/repo-blueprint">Source on GitHub</a><a href="https://www.npmjs.com/package/repo-blueprint">npm</a></div>
+<section>
+<h2>JavaScript and TypeScript</h2>
+<div class="grid">
+<article class="card">
+  <div class="top"><h3><a class="open" href="express.blueprint.html">express</a></h3><span class="lang">JavaScript</span></div>
+  <p class="about">Fast, minimalist web framework for Node.js, written in CommonJS</p>
+  <p class="stats">1 package · 50 files · 4 findings</p>
+  <p class="src"><a href="https://github.com/expressjs/express/tree/1c6f1b0fe4000977b9a7b4f34097e4d527dd9824">expressjs/express @ 1c6f1b0</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="koa.blueprint.html">koa</a></h3><span class="lang">JavaScript</span></div>
+  <p class="about">Middleware framework for Node.js from the team behind Express</p>
+  <p class="stats">1 package · 9 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/koajs/koa/tree/b786e7b456782c2cff1d6549cd4c8dba3feeb262">koajs/koa @ b786e7b</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="debug.blueprint.html">debug</a></h3><span class="lang">JavaScript</span></div>
+  <p class="about">Tiny debugging utility for Node.js and browsers</p>
+  <p class="stats">1 package · 7 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/debug-js/debug/tree/666dbc50680933bde9e7fde3a6c3241102e8f60b">debug-js/debug @ 666dbc5</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="chalk.blueprint.html">chalk</a></h3><span class="lang">JavaScript</span></div>
+  <p class="about">Terminal string styling</p>
+  <p class="stats">1 package · 8 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/chalk/chalk/tree/72110019e147683f60e13fa0ff5c14a0c27cd9fe">chalk/chalk @ 7211001</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="nanoid.blueprint.html">nanoid</a></h3><span class="lang">JavaScript</span></div>
+  <p class="about">Tiny, secure unique string ID generator</p>
+  <p class="stats">1 package · 9 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/ai/nanoid/tree/35ea7d02c9f01d7f3d2293cc97829ff16d1e8117">ai/nanoid @ 35ea7d0</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="ky.blueprint.html">ky</a></h3><span class="lang">TypeScript</span></div>
+  <p class="about">Small HTTP client built on the Fetch API</p>
+  <p class="stats">1 package · 31 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d">sindresorhus/ky @ 3541888</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="zustand.blueprint.html">zustand</a></h3><span class="lang">TypeScript</span></div>
+  <p class="about">Small state management for React</p>
+  <p class="stats">3 packages · 31 files · 3 findings</p>
+  <p class="src"><a href="https://github.com/pmndrs/zustand/tree/382d29c485e67018c06e75ec7235130d0968522c">pmndrs/zustand @ 382d29c</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="zod.blueprint.html">zod</a></h3><span class="lang">TypeScript</span></div>
+  <p class="about">TypeScript-first schema validation, as a monorepo</p>
+  <p class="stats">9 packages · 306 files · 19 findings</p>
+  <p class="src"><a href="https://github.com/colinhacks/zod/tree/b1f6ba06c5de0e600640917615e5df70fa73f060">colinhacks/zod @ b1f6ba0</a></p>
+</article>
+</div>
+</section>
+<section>
+<h2>Python</h2>
+<div class="grid">
+<article class="card">
+  <div class="top"><h3><a class="open" href="requests.blueprint.html">requests</a></h3><span class="lang">Python</span></div>
+  <p class="about">HTTP for humans</p>
+  <p class="stats">1 package · 22 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157">psf/requests @ 3c7baaa</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="click.blueprint.html">click</a></h3><span class="lang">Python</span></div>
+  <p class="about">Composable command-line interfaces</p>
+  <p class="stats">11 packages · 32 files · 22 findings</p>
+  <p class="src"><a href="https://github.com/pallets/click/tree/2247b35ea1c47c727d7a06e51fa280e12a863ff6">pallets/click @ 2247b35</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="httpx.blueprint.html">httpx</a></h3><span class="lang">Python</span></div>
+  <p class="about">Next-generation HTTP client, sync and async</p>
+  <p class="stats">1 package · 23 files · 2 findings</p>
+  <p class="src"><a href="https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254">encode/httpx @ b5addb6</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="flask.blueprint.html">flask</a></h3><span class="lang">Python</span></div>
+  <p class="about">Lightweight WSGI web framework</p>
+  <p class="stats">4 packages · 35 files · 8 findings</p>
+  <p class="src"><a href="https://github.com/pallets/flask/tree/d086db856be187255b8ec61ef409357393020f32">pallets/flask @ d086db8</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="rich.blueprint.html">rich</a></h3><span class="lang">Python</span></div>
+  <p class="about">Rich text and formatting in the terminal</p>
+  <p class="stats">1 package · 146 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/Textualize/rich/tree/9d8f9a372cc5916fd4781fec207ced7ddac2f08f">Textualize/rich @ 9d8f9a3</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="litellm.blueprint.html">litellm</a></h3><span class="lang">Python</span></div>
+  <p class="about">One API for 100+ LLM providers, with a proxy server and a React dashboard</p>
+  <p class="stats">5 packages · 4,805 files · 9 findings · <span class="heavy">7.0 MB, takes a few seconds to open</span></p>
+  <p class="src"><a href="https://github.com/BerriAI/litellm/tree/a2ef18b257c8ef6b160ddf9707d070f89d0b605d">BerriAI/litellm @ a2ef18b</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="instructor.blueprint.html">instructor</a></h3><span class="lang">Python</span></div>
+  <p class="about">Structured outputs from LLMs</p>
+  <p class="stats">1 package · 347 files · 2 findings</p>
+  <p class="src"><a href="https://github.com/567-labs/instructor/tree/6cd771c5254a69f6a6cf9cdf357fb2f9523f0b85">567-labs/instructor @ 6cd771c</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="pydantic.blueprint.html">pydantic</a></h3><span class="lang">Python</span></div>
+  <p class="about">Data validation with Python type hints</p>
+  <p class="stats">4 packages · 130 files · 8 findings</p>
+  <p class="src"><a href="https://github.com/pydantic/pydantic/tree/becee9cc0ef8132e854762448fde76aa56608c6b">pydantic/pydantic @ becee9c</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="fastapi.blueprint.html">fastapi</a></h3><span class="lang">Python</span></div>
+  <p class="about">Web framework for building APIs</p>
+  <p class="stats">1 package · 553 files · 2 findings</p>
+  <p class="src"><a href="https://github.com/fastapi/fastapi/tree/79cab5bed28b24d92c185d236feb33f5783dfeb3">fastapi/fastapi @ 79cab5b</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="typer.blueprint.html">typer</a></h3><span class="lang">Python</span></div>
+  <p class="about">Command-line apps from type hints</p>
+  <p class="stats">1 package · 336 files · 2 findings</p>
+  <p class="src"><a href="https://github.com/fastapi/typer/tree/a5882dedf0bc7a46cd861fdfca020f88519e0f21">fastapi/typer @ a5882de</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="sqlmodel.blueprint.html">sqlmodel</a></h3><span class="lang">Python</span></div>
+  <p class="about">SQL databases with Pydantic and SQLAlchemy</p>
+  <p class="stats">1 package · 163 files · 2 findings</p>
+  <p class="src"><a href="https://github.com/fastapi/sqlmodel/tree/462b59d9cd1cc3d9072735435330ef9ab6d15cbf">fastapi/sqlmodel @ 462b59d</a></p>
+</article>
+<article class="card">
+  <div class="top"><h3><a class="open" href="nanochat.blueprint.html">nanochat</a></h3><span class="lang">Python</span></div>
+  <p class="about">Andrej Karpathy&#39;s full-stack ChatGPT clone in one small codebase</p>
+  <p class="stats">1 package · 30 files · 1 finding</p>
+  <p class="src"><a href="https://github.com/karpathy/nanochat/tree/92d63d4e8bb4df75c3b71618f31ddde2378b2bcd">karpathy/nanochat @ 92d63d4</a></p>
+</article>
+</div>
+</section>
+<footer>Rebuilt with <code>node examples/build-examples.mjs</code>. Each repo is pinned in <a href="https://github.com/MohGanji/repo-blueprint/blob/main/examples/corpus.json">corpus.json</a>.</footer>
+</main>
+</body>
+</html>

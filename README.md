@@ -11,6 +11,12 @@ A clearer way to see how a repository is built. repo-blueprint maps a codebase i
 - Produces one self-contained HTML file
 - Uses static analysis only, so the output is deterministic
 
+## Examples
+
+**[Explore the example gallery →](https://mohganji.github.io/repo-blueprint/)**
+
+Blueprints of 20 open-source projects, open in your browser: Express, Zod and Zustand from npm, Pydantic, FastAPI, LiteLLM and Karpathy's nanochat from Python, and more. Each one is pinned to a commit in [`corpus.json`](https://github.com/MohGanji/repo-blueprint/blob/main/examples/corpus.json), and `node examples/build-examples.mjs` rebuilds them.
+
 ## Usage
 
 Requires Node.js 18.17+. Python projects also need Python 3.10+ or [uv](https://docs.astral.sh/uv/).
@@ -68,10 +74,6 @@ None is needed: every imported package is on the map without it. Put a `.bluepri
 | `messaging` | Method and property names for RPC calls, publishes and subscriptions |
 | `folderRoles` | Folder names that imply a role, used by the role-mismatch finding |
 | `sdkDirs` | Folders whose subfolders are generated API clients, named after the services they call |
-
-## Examples
-
-[`examples/`](https://github.com/MohGanji/repo-blueprint/tree/main/examples) holds blueprints of open-source projects, each pinned to a commit in [`corpus.json`](https://github.com/MohGanji/repo-blueprint/blob/main/examples/corpus.json): Express, Koa, debug, Chalk, nanoid, Ky, Zustand and Zod from npm, and Requests, Click, HTTPX, Flask, Rich, Pydantic, FastAPI, Typer, SQLModel, Instructor, LiteLLM and Karpathy's nanochat from PyPI and GitHub. Download one and open it in a browser. `node examples/build-examples.mjs` rebuilds them.
 
 ## How it works
 
