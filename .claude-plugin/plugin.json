@@ -1,7 +1,7 @@
 {
   "name": "repo-blueprint",
-  "version": "0.1.2",
-  "description": "Generate a zoomable, dependency-layered architecture map of a code repository by static analysis.",
+  "version": "0.1.3",
+  "description": "A clearer way to see how a repository is built. Maps TypeScript and Python codebases into dependency layers you can zoom through.",
   "license": "MIT",
   "author": {
     "name": "Mo Ganji"
